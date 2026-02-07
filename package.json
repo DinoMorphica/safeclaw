@@ -1,0 +1,24 @@
+{
+  "name": "safeclaw-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:shared": "pnpm --filter @safeclaw/shared build",
+    "build:web": "pnpm --filter @safeclaw/web build",
+    "build:cli": "pnpm --filter safeclaw build",
+    "dev:web": "pnpm --filter @safeclaw/web dev",
+    "dev:cli": "pnpm --filter safeclaw dev",
+    "clean": "pnpm -r exec rm -rf dist && rm -rf apps/cli/public/*",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3", "esbuild"]
+  }
+}
