@@ -84,4 +84,9 @@ export const agentActivities = sqliteTable("agent_activities", {
     .default(sql`(datetime('now'))`),
   toolName: text("tool_name"),
   targetPath: text("target_path"),
+  runId: text("run_id"),
+  contentPreview: text("content_preview"),
+  readContentPreview: text("read_content_preview"),
+  secretsDetected: text("secrets_detected"),
+  threatFindings: text("threat_findings"),
 });

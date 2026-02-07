@@ -13,11 +13,53 @@ export type ActivityType =
   | "message"
   | "unknown";
 
+// --- Secret detection types ---
+export type SecretType =
+  | "AWS_ACCESS_KEY"
+  | "AWS_SECRET_KEY"
+  | "OPENAI_API_KEY"
+  | "GITHUB_TOKEN"
+  | "GITLAB_TOKEN"
+  | "SLACK_TOKEN"
+  | "SLACK_WEBHOOK"
+  | "PEM_PRIVATE_KEY"
+  | "STRIPE_KEY"
+  | "SENDGRID_KEY"
+  | "TWILIO_KEY"
+  | "JWT_TOKEN"
+  | "DATABASE_URL"
+  | "BASIC_AUTH_HEADER"
+  | "PASSWORD_IN_ENV"
+  | "GENERIC_API_KEY"
+  | "GENERIC_SECRET";
+
 export type OpenClawConnectionStatus =
   | "connected"
   | "disconnected"
   | "connecting"
   | "not_configured";
+
+// --- Threat classification types ---
+export type ThreatCategoryId =
+  | "TC-SEC"  // Secret Exposure
+  | "TC-EXF"  // Data Exfiltration
+  | "TC-INJ"  // Prompt Injection Risk
+  | "TC-DES"  // Destructive Operation
+  | "TC-ESC"  // Privilege Escalation
+  | "TC-SUP"  // Supply Chain Risk
+  | "TC-SFA"  // Sensitive File Access
+  | "TC-SYS"  // System Modification
+  | "TC-NET"  // Suspicious Network Activity
+  | "TC-MCP"; // MCP/Tool Poisoning
+
+export interface ThreatFinding {
+  categoryId: ThreatCategoryId;
+  categoryName: string;
+  severity: ThreatLevel;
+  reason: string;
+  evidence?: string;
+  owaspRef?: string;
+}
 
 // --- Database row types ---
 export interface CommandLog {
@@ -55,6 +97,11 @@ export interface AgentActivity {
   timestamp: string;
   toolName: string | null;
   targetPath: string | null;
+  runId: string | null;
+  contentPreview: string | null;
+  readContentPreview: string | null;
+  secretsDetected: string[] | null;
+  threatFindings: ThreatFinding[] | null;
 }
 
 export interface OpenClawSession {

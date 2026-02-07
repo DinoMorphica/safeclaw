@@ -15,9 +15,30 @@ export function ShellCommandRenderer({ activity, parsed }: Props) {
 
   const result = parsed.result as string | undefined;
   const cwd = parsed.args.cwd as string | undefined;
+  // Prefer contentPreview from the activity (captured via session file watcher)
+  const output = activity.contentPreview || result;
 
   return (
     <div className="space-y-3">
+      {/* Secrets Warning Banner */}
+      {activity.secretsDetected && activity.secretsDetected.length > 0 && (
+        <div className="p-3 bg-red-900/30 border border-red-700 rounded">
+          <p className="text-sm font-semibold text-red-300 mb-1">
+            Secrets Detected in Output
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {activity.secretsDetected.map((secret, i) => (
+              <span
+                key={i}
+                className="px-2 py-0.5 text-xs bg-red-800/50 text-red-200 rounded"
+              >
+                {secret}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Command */}
       <div>
         <p className="text-xs text-gray-500 mb-1">Command:</p>
@@ -43,11 +64,11 @@ export function ShellCommandRenderer({ activity, parsed }: Props) {
       )}
 
       {/* Output */}
-      {result && parsed.phase === "result" && (
+      {output && (
         <div>
           <p className="text-xs text-gray-500 mb-1">Output:</p>
           <pre className="text-xs p-3 bg-gray-800 rounded max-h-96 overflow-y-auto text-gray-300 border border-gray-700 whitespace-pre-wrap break-words">
-            {result}
+            {output}
           </pre>
         </div>
       )}

@@ -1,5 +1,4 @@
 import type { AgentActivity } from "@safeclaw/shared";
-import { parseRawPayload } from "./activityParser.js";
 
 export interface GroupedInteraction {
   primary: AgentActivity; // Most recent activity in this interaction
@@ -12,10 +11,9 @@ export function groupActivitiesByInteraction(
 ): GroupedInteraction[] {
   const groups = new Map<string, AgentActivity[]>();
 
-  // Group activities by runId (interaction)
+  // Group activities by runId (interaction) — use the field directly on the activity
   for (const activity of activities) {
-    const parsed = parseRawPayload(activity.rawPayload);
-    const key = parsed.runId || `fallback-${activity.id}`;
+    const key = activity.runId || `fallback-${activity.id}`;
 
     if (!groups.has(key)) {
       groups.set(key, []);

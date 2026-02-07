@@ -28,13 +28,30 @@ export function ActivityDetailPanel({ phases }: Props) {
       {/* Security Indicators */}
       {indicators.length > 0 && (
         <div className="space-y-2">
+          <p className="text-xs text-gray-500 font-medium">
+            Threat Findings ({indicators.length})
+          </p>
           {indicators.map((indicator, i) => (
             <div
               key={i}
-              className={`flex items-center gap-2 p-2 rounded text-xs border ${indicator.color}`}
+              className={`flex items-start gap-2 p-2 rounded text-xs border ${indicator.color}`}
             >
-              <span className="text-base">{indicator.icon}</span>
-              <span className="font-medium">{indicator.message}</span>
+              <span className="text-base shrink-0">{indicator.icon}</span>
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {indicator.categoryId && (
+                    <span className="px-1.5 py-0.5 bg-gray-800 text-gray-300 rounded font-mono text-[10px] shrink-0">
+                      {indicator.categoryId}
+                    </span>
+                  )}
+                  <span className="font-medium">{indicator.message}</span>
+                  {indicator.owaspRef && (
+                    <span className="px-1 py-0.5 bg-gray-700/50 text-gray-400 rounded text-[10px] shrink-0">
+                      OWASP {indicator.owaspRef}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -80,7 +97,7 @@ export function ActivityDetailPanel({ phases }: Props) {
                                 : "bg-gray-700 text-gray-400"
                     }`}
                   >
-                    {activityParsed.toolName || activity.activityType}
+                    {activity.toolName || activity.activityType}
                   </span>
                   <span className="text-gray-500 truncate" title={activity.detail}>
                     {activity.detail}
@@ -90,6 +107,21 @@ export function ActivityDetailPanel({ phases }: Props) {
                   </span>
                   {activityParsed.isError && (
                     <span className="text-red-400 text-xs">⚠ error</span>
+                  )}
+                  {activity.threatLevel !== "NONE" && (
+                    <span
+                      className={`px-1 py-0.5 rounded text-[10px] font-medium shrink-0 ${
+                        activity.threatLevel === "CRITICAL"
+                          ? "bg-red-900/40 text-red-400"
+                          : activity.threatLevel === "HIGH"
+                            ? "bg-orange-900/40 text-orange-400"
+                            : activity.threatLevel === "MEDIUM"
+                              ? "bg-yellow-900/40 text-yellow-400"
+                              : "bg-blue-900/40 text-blue-400"
+                      }`}
+                    >
+                      {activity.threatLevel}
+                    </span>
                   )}
                 </div>
               );

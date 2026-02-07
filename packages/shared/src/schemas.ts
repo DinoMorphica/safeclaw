@@ -57,6 +57,20 @@ export const openClawConnectionStatusSchema = z.enum([
   "not_configured",
 ]);
 
+export const threatCategoryIdSchema = z.enum([
+  "TC-SEC", "TC-EXF", "TC-INJ", "TC-DES", "TC-ESC",
+  "TC-SUP", "TC-SFA", "TC-SYS", "TC-NET", "TC-MCP",
+]);
+
+export const threatFindingSchema = z.object({
+  categoryId: threatCategoryIdSchema,
+  categoryName: z.string(),
+  severity: threatLevelSchema,
+  reason: z.string(),
+  evidence: z.string().optional(),
+  owaspRef: z.string().optional(),
+});
+
 export const agentActivitySchema = z.object({
   id: z.number(),
   openclawSessionId: z.string(),
@@ -67,6 +81,11 @@ export const agentActivitySchema = z.object({
   timestamp: z.string(),
   toolName: z.string().nullable(),
   targetPath: z.string().nullable(),
+  runId: z.string().nullable(),
+  contentPreview: z.string().nullable(),
+  readContentPreview: z.string().nullable(),
+  secretsDetected: z.array(z.string()).nullable(),
+  threatFindings: z.array(threatFindingSchema).nullable(),
 });
 
 export const openClawSessionSchema = z.object({

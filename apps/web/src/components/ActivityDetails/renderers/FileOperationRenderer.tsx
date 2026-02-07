@@ -7,7 +7,7 @@ interface Props {
 }
 
 export function FileOperationRenderer({ activity, parsed }: Props) {
-  const path = parsed.sensitiveFields.path;
+  const path = parsed.sensitiveFields.path || activity.targetPath;
   const isSensitive =
     path &&
     (/\.(env|pem|key|pass|secret|token)$/i.test(path) ||
@@ -15,9 +15,30 @@ export function FileOperationRenderer({ activity, parsed }: Props) {
       /^(\/etc|\/usr\/bin|\/root)/i.test(path));
 
   const result = parsed.result as string | undefined;
+  // Prefer contentPreview from the activity (captured via session file watcher)
+  const contentPreview = activity.contentPreview || result;
 
   return (
     <div className="space-y-3">
+      {/* Secrets Warning Banner */}
+      {activity.secretsDetected && activity.secretsDetected.length > 0 && (
+        <div className="p-3 bg-red-900/30 border border-red-700 rounded">
+          <p className="text-sm font-semibold text-red-300 mb-1">
+            Secrets Detected in Content
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {activity.secretsDetected.map((secret, i) => (
+              <span
+                key={i}
+                className="px-2 py-0.5 text-xs bg-red-800/50 text-red-200 rounded"
+              >
+                {secret}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* File Path */}
       <div>
         <p className="text-xs text-gray-500 mb-1">Path:</p>
@@ -32,17 +53,25 @@ export function FileOperationRenderer({ activity, parsed }: Props) {
         </code>
       </div>
 
-      {/* Content Preview (for reads) */}
-      {activity.activityType === "file_read" &&
-        result &&
-        parsed.phase === "result" && (
-          <div>
-            <p className="text-xs text-gray-500 mb-1">Content Preview:</p>
-            <pre className="text-xs p-3 bg-gray-800 rounded max-h-96 overflow-y-auto text-gray-300 border border-gray-700 whitespace-pre-wrap break-words">
-              {result}
-            </pre>
-          </div>
-        )}
+      {/* Content Preview (from session watcher or raw payload) */}
+      {contentPreview && (
+        <div>
+          <p className="text-xs text-gray-500 mb-1">Content Preview:</p>
+          <pre className="text-xs p-3 bg-gray-800 rounded max-h-96 overflow-y-auto text-gray-300 border border-gray-700 whitespace-pre-wrap break-words">
+            {contentPreview}
+          </pre>
+        </div>
+      )}
+
+      {/* Original content from preceding read (for write operations) */}
+      {activity.activityType === "file_write" && activity.readContentPreview && (
+        <div>
+          <p className="text-xs text-gray-500 mb-1">Original Content (before edit):</p>
+          <pre className="text-xs p-3 bg-gray-800 rounded max-h-96 overflow-y-auto text-gray-400 border border-gray-600 whitespace-pre-wrap break-words">
+            {activity.readContentPreview}
+          </pre>
+        </div>
+      )}
 
       {/* Write confirmation (for writes) */}
       {activity.activityType === "file_write" && parsed.phase === "result" && (

@@ -47,6 +47,7 @@ export interface ParsedActivity {
   toolName: string | null;
   targetPath: string | null;
   timestamp: string;
+  runId: string | null;
 }
 
 export interface ExecApprovalRequest {
@@ -447,6 +448,7 @@ export class OpenClawClient extends EventEmitter {
     const message = payload.message as Record<string, unknown> | undefined;
     const ts = payload.ts as number | undefined;
     const timestamp = ts ? new Date(ts).toISOString() : new Date().toISOString();
+    const runId = (payload.runId as string) ?? null;
 
     // Extract channel from sessionKey (e.g. "whatsapp:dm:+1234" or "agent:main:main")
     let channel = "unknown";
@@ -500,6 +502,7 @@ export class OpenClawClient extends EventEmitter {
       toolName: channel,
       targetPath,
       timestamp,
+      runId,
     };
     this.emit("activity", activity);
 
@@ -541,6 +544,7 @@ export class OpenClawClient extends EventEmitter {
       toolName: "exec",
       targetPath: null,
       timestamp: new Date().toISOString(),
+      runId: null,
     };
     this.emit("activity", activity);
   }
@@ -633,6 +637,7 @@ export class OpenClawClient extends EventEmitter {
       toolName,
       targetPath,
       timestamp,
+      runId: null,
     };
   }
 
