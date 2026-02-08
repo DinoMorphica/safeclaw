@@ -7,11 +7,13 @@ export function Layout() {
     <div className="flex h-screen bg-gray-950">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center justify-between border-b border-gray-800 px-6">
+        <header className="flex h-14 items-center border-b border-gray-800 px-6">
           <h1 className="text-sm font-medium text-gray-300">
-            AI Agent Security Dashboard
+            AI Agents Connected
           </h1>
-          <ConnectionStatus />
+          <div className="ml-4">
+            <ConnectionStatus />
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">

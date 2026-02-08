@@ -3,6 +3,7 @@ import { Layout } from "./components/Layout";
 import { DashboardPage } from "./pages/DashboardPage";
 import { InterceptionPage } from "./pages/InterceptionPage";
 import { SessionsPage } from "./pages/SessionsPage";
+import { ThreatsPage } from "./pages/ThreatsPage";
 import { AccessControlPage } from "./pages/AccessControlPage";
 import { OpenClawPage } from "./pages/OpenClawPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -15,6 +16,7 @@ export default function App() {
           <Route index element={<DashboardPage />} />
           <Route path="interception" element={<InterceptionPage />} />
           <Route path="sessions" element={<SessionsPage />} />
+          <Route path="threats" element={<ThreatsPage />} />
           <Route path="access" element={<AccessControlPage />} />
           <Route path="openclaw" element={<OpenClawPage />} />
           <Route path="settings" element={<SettingsPage />} />

@@ -4,7 +4,7 @@ import { desc, eq, and, sql } from "drizzle-orm";
 import { readConfig, writeConfig } from "../lib/config.js";
 import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.js";
 import { getOpenClawMonitor } from "../services/openclaw-monitor.js";
-import type { OpenClawConfig } from "@safeclaw/shared";
+import type { OpenClawConfig, ThreatLevel } from "@safeclaw/shared";
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/health", async () => {
@@ -119,6 +119,31 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     const monitor = getOpenClawMonitor();
     if (!monitor) return [];
     return monitor.getActivities(sessionId, Number(limit));
+  });
+
+  app.get("/api/openclaw/threats", async (request) => {
+    const { severity, resolved, limit = 100 } = request.query as {
+      severity?: ThreatLevel;
+      resolved?: string;
+      limit?: number;
+    };
+    const monitor = getOpenClawMonitor();
+    if (!monitor) return [];
+    return monitor.getThreats(
+      severity,
+      resolved === undefined ? undefined : resolved === "true",
+      Number(limit),
+    );
+  });
+
+  app.put("/api/openclaw/activities/:id/resolve", async (request) => {
+    const { id } = request.params as { id: string };
+    const { resolved } = request.body as { resolved: boolean };
+    const monitor = getOpenClawMonitor();
+    if (!monitor) return { error: "Monitor not available" };
+    const updated = await monitor.resolveActivity(Number(id), resolved);
+    if (!updated) return { error: "Activity not found" };
+    return updated;
   });
 
   app.get("/api/openclaw/status", async () => {

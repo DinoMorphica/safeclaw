@@ -73,6 +73,17 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
           HIGH: allActivities.filter((a) => a.threatLevel === "HIGH").length,
           CRITICAL: allActivities.filter((a) => a.threatLevel === "CRITICAL").length,
         },
+        resolvedThreatBreakdown: {
+          NONE: allActivities.filter((a) => a.threatLevel === "NONE" && a.resolved === 1).length,
+          LOW: allActivities.filter((a) => a.threatLevel === "LOW" && a.resolved === 1).length,
+          MEDIUM: allActivities.filter((a) => a.threatLevel === "MEDIUM" && a.resolved === 1).length,
+          HIGH: allActivities.filter((a) => a.threatLevel === "HIGH" && a.resolved === 1).length,
+          CRITICAL: allActivities.filter((a) => a.threatLevel === "CRITICAL" && a.resolved === 1).length,
+        },
+        threatDetectionRate: {
+          activitiesWithThreats: allActivities.filter((a) => a.threatLevel !== "NONE").length,
+          totalActivities: allActivities.length,
+        },
       };
       socket.emit("safeclaw:stats", stats);
     });
@@ -217,6 +228,24 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
       const monitor = getOpenClawMonitor();
       if (!monitor) return;
       monitor.reconnect();
+    });
+
+    socket.on("safeclaw:resolveActivity", async ({ activityId, resolved }) => {
+      const monitor = getOpenClawMonitor();
+      if (!monitor) return;
+      const updated = await monitor.resolveActivity(activityId, resolved);
+      if (updated) {
+        io!.emit("safeclaw:threatResolved", updated);
+      }
+    });
+
+    socket.on("safeclaw:getThreats", async ({ severity, resolved, limit }) => {
+      const monitor = getOpenClawMonitor();
+      if (!monitor) return;
+      const threats = await monitor.getThreats(severity, resolved, limit);
+      for (const threat of threats) {
+        socket.emit("safeclaw:openclawActivity", threat);
+      }
     });
 
     socket.on("disconnect", () => {

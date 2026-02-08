@@ -5,7 +5,7 @@ import {
 import { SessionWatcher, type SessionFileActivity } from "./session-watcher.js";
 import { analyzeActivityThreat } from "../interceptor.js";
 import { getDb, schema } from "../db/index.js";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, ne, desc, and, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 import { readOpenClawConfig } from "../lib/openclaw-config.js";
 import type { TypedSocketServer } from "../server/socket.js";
@@ -172,6 +172,8 @@ export class OpenClawMonitor {
       readContentPreview: inserted.readContentPreview,
       secretsDetected: parsedSecrets,
       threatFindings: parsedFindings,
+      resolved: false,
+      resolvedAt: null,
     };
 
     this.io.emit("safeclaw:openclawActivity", activity);
@@ -294,6 +296,93 @@ export class OpenClawMonitor {
     };
   }
 
+  private mapRowToActivity(r: typeof schema.agentActivities.$inferSelect): AgentActivity {
+    let parsedSecrets: string[] | null = null;
+    if (r.secretsDetected) {
+      try {
+        parsedSecrets = JSON.parse(r.secretsDetected) as string[];
+      } catch {
+        parsedSecrets = null;
+      }
+    }
+
+    let parsedFindings: ThreatFinding[] | null = null;
+    if (r.threatFindings) {
+      try {
+        parsedFindings = JSON.parse(r.threatFindings) as ThreatFinding[];
+      } catch {
+        parsedFindings = null;
+      }
+    }
+
+    return {
+      id: r.id,
+      openclawSessionId: r.openclawSessionId,
+      activityType: r.activityType as ActivityType,
+      detail: r.detail,
+      rawPayload: r.rawPayload,
+      threatLevel: r.threatLevel as ThreatLevel,
+      timestamp: r.timestamp,
+      toolName: r.toolName,
+      targetPath: r.targetPath,
+      runId: r.runId,
+      contentPreview: r.contentPreview,
+      readContentPreview: r.readContentPreview,
+      secretsDetected: parsedSecrets,
+      threatFindings: parsedFindings,
+      resolved: Boolean(r.resolved),
+      resolvedAt: r.resolvedAt ?? null,
+    };
+  }
+
+  async resolveActivity(
+    activityId: number,
+    resolved: boolean,
+  ): Promise<AgentActivity | null> {
+    const db = getDb();
+    await db
+      .update(schema.agentActivities)
+      .set({
+        resolved: resolved ? 1 : 0,
+        resolvedAt: resolved ? new Date().toISOString() : null,
+      })
+      .where(eq(schema.agentActivities.id, activityId));
+
+    const [row] = await db
+      .select()
+      .from(schema.agentActivities)
+      .where(eq(schema.agentActivities.id, activityId));
+
+    if (!row) return null;
+    return this.mapRowToActivity(row);
+  }
+
+  async getThreats(
+    severity?: ThreatLevel,
+    resolved?: boolean,
+    limit = 100,
+  ): Promise<AgentActivity[]> {
+    const db = getDb();
+
+    const conditions = [ne(schema.agentActivities.threatLevel, "NONE")];
+
+    if (severity) {
+      conditions.push(eq(schema.agentActivities.threatLevel, severity) as ReturnType<typeof ne>);
+    }
+    if (resolved !== undefined) {
+      conditions.push(eq(schema.agentActivities.resolved, resolved ? 1 : 0) as ReturnType<typeof ne>);
+    }
+
+    const rows = await db
+      .select()
+      .from(schema.agentActivities)
+      .where(and(...conditions))
+      .orderBy(desc(schema.agentActivities.id))
+      .limit(limit);
+
+    return rows.map((r) => this.mapRowToActivity(r));
+  }
+
   async getActivities(
     sessionId?: string,
     limit = 50,
@@ -316,42 +405,7 @@ export class OpenClawMonitor {
         .limit(limit);
     }
 
-    return rows.map((r) => {
-      let parsedSecrets: string[] | null = null;
-      if (r.secretsDetected) {
-        try {
-          parsedSecrets = JSON.parse(r.secretsDetected) as string[];
-        } catch {
-          parsedSecrets = null;
-        }
-      }
-
-      let parsedFindings: ThreatFinding[] | null = null;
-      if (r.threatFindings) {
-        try {
-          parsedFindings = JSON.parse(r.threatFindings) as ThreatFinding[];
-        } catch {
-          parsedFindings = null;
-        }
-      }
-
-      return {
-        id: r.id,
-        openclawSessionId: r.openclawSessionId,
-        activityType: r.activityType as ActivityType,
-        detail: r.detail,
-        rawPayload: r.rawPayload,
-        threatLevel: r.threatLevel as ThreatLevel,
-        timestamp: r.timestamp,
-        toolName: r.toolName,
-        targetPath: r.targetPath,
-        runId: r.runId,
-        contentPreview: r.contentPreview,
-        readContentPreview: r.readContentPreview,
-        secretsDetected: parsedSecrets,
-        threatFindings: parsedFindings,
-      };
-    });
+    return rows.map((r) => this.mapRowToActivity(r));
   }
 
   async getAllSessions(): Promise<OpenClawSession[]> {

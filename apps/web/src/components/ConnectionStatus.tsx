@@ -3,23 +3,14 @@ import { socket } from "../lib/socket";
 import type { OpenClawMonitorStatus } from "@safeclaw/shared";
 
 export function ConnectionStatus() {
-  const [connected, setConnected] = useState(socket.connected);
   const [openclawStatus, setOpenclawStatus] =
     useState<OpenClawMonitorStatus | null>(null);
 
   useEffect(() => {
-    const onConnect = () => setConnected(true);
-    const onDisconnect = () => setConnected(false);
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-
     socket.emit("safeclaw:getOpenclawMonitorStatus");
     socket.on("safeclaw:openclawMonitorStatus", setOpenclawStatus);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
       socket.off("safeclaw:openclawMonitorStatus", setOpenclawStatus);
     };
   }, []);
@@ -42,14 +33,6 @@ export function ConnectionStatus() {
 
   return (
     <div className="flex items-center gap-4 text-sm">
-      <div className="flex items-center gap-1.5">
-        <span
-          className={`h-2 w-2 rounded-full ${
-            connected ? "bg-success" : "bg-danger"
-          }`}
-        />
-        <span className="text-gray-500 text-xs">SafeClaw</span>
-      </div>
       <div className="flex items-center gap-1.5">
         <span className={`h-2 w-2 rounded-full ${openclawColor}`} />
         <span className="text-gray-500 text-xs">OpenClaw: {openclawLabel}</span>

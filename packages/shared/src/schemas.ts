@@ -86,6 +86,8 @@ export const agentActivitySchema = z.object({
   readContentPreview: z.string().nullable(),
   secretsDetected: z.array(z.string()).nullable(),
   threatFindings: z.array(threatFindingSchema).nullable(),
+  resolved: z.boolean(),
+  resolvedAt: z.string().nullable(),
 });
 
 export const openClawSessionSchema = z.object({

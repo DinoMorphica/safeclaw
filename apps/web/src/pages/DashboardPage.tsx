@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { socket } from "../lib/socket";
-import type { DashboardStats, CommandLog } from "@safeclaw/shared";
+import type { DashboardStats, AgentActivity } from "@safeclaw/shared";
 
 const THREAT_COLORS: Record<string, string> = {
   CRITICAL: "text-danger",
@@ -10,40 +10,36 @@ const THREAT_COLORS: Record<string, string> = {
   NONE: "text-success",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  BLOCKED: "text-danger",
-  ALLOWED: "text-success",
-  PENDING: "text-warning",
+const BAR_COLORS: Record<string, string> = {
+  CRITICAL: "bg-danger",
+  HIGH: "bg-warning",
+  MEDIUM: "bg-primary",
+  LOW: "bg-gray-500",
 };
 
 export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentCommands, setRecentCommands] = useState<CommandLog[]>([]);
+  const [recentActivities, setRecentActivities] = useState<AgentActivity[]>([]);
 
-  const handleCommand = useCallback((cmd: CommandLog) => {
-    setRecentCommands((prev) => {
-      const exists = prev.findIndex((c) => c.id === cmd.id);
-      if (exists >= 0) {
-        const updated = [...prev];
-        updated[exists] = cmd;
-        return updated;
-      }
-      return [cmd, ...prev].slice(0, 10);
+  const handleActivity = useCallback((activity: AgentActivity) => {
+    setRecentActivities((prev) => {
+      if (prev.some((a) => a.id === activity.id)) return prev;
+      return [activity, ...prev].slice(0, 10);
     });
   }, []);
 
   useEffect(() => {
     socket.emit("safeclaw:getStats");
-    socket.emit("safeclaw:getRecentCommands", { limit: 10 });
+    socket.emit("safeclaw:getOpenclawActivities", { limit: 10 });
 
     socket.on("safeclaw:stats", setStats);
-    socket.on("safeclaw:commandLogged", handleCommand);
+    socket.on("safeclaw:openclawActivity", handleActivity);
 
     return () => {
       socket.off("safeclaw:stats", setStats);
-      socket.off("safeclaw:commandLogged", handleCommand);
+      socket.off("safeclaw:openclawActivity", handleActivity);
     };
-  }, [handleCommand]);
+  }, [handleActivity]);
 
   const pendingCount =
     stats && stats.totalCommands > 0
@@ -55,7 +51,7 @@ export function DashboardPage() {
       <h2 className="text-2xl font-bold mb-6">Dashboard Overview</h2>
       {stats ? (
         <>
-          {/* Stats Cards */}
+          {/* Row 1: Command Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <StatCard label="Total Commands" value={stats.totalCommands} />
             <StatCard
@@ -75,7 +71,7 @@ export function DashboardPage() {
             />
           </div>
 
-          {/* OpenClaw Stats */}
+          {/* Row 2: OpenClaw Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <StatCard
               label="Agent Activities"
@@ -87,147 +83,116 @@ export function DashboardPage() {
               value={stats.openclawActiveSessions ?? 0}
               color="text-primary"
             />
+            {/* Threat Detection Rate */}
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-              <p className="text-sm text-gray-400">Agent Threat Breakdown</p>
-              <div className="flex gap-3 mt-2">
-                {(
-                  ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"] as const
-                ).map((level) => {
-                  const count =
-                    stats.openclawThreatBreakdown?.[level] ?? 0;
-                  if (count === 0) return null;
-                  return (
-                    <span
-                      key={level}
-                      className={`text-xs font-medium ${THREAT_COLORS[level]}`}
-                    >
-                      {level}: {count}
-                    </span>
-                  );
-                })}
-                {Object.values(stats.openclawThreatBreakdown ?? {}).every(
-                  (v) => v === 0,
+              <p className="text-sm text-gray-400">Threat Detection Rate</p>
+              <p className="text-3xl font-bold mt-1 text-primary">
+                {stats.threatDetectionRate?.activitiesWithThreats ?? 0}
+                <span className="text-lg text-gray-500">
+                  {" "}
+                  / {stats.threatDetectionRate?.totalActivities ?? 0}
+                </span>
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {stats.threatDetectionRate &&
+                stats.threatDetectionRate.totalActivities > 0
+                  ? `${Math.round(
+                      (stats.threatDetectionRate.activitiesWithThreats /
+                        stats.threatDetectionRate.totalActivities) *
+                        100,
+                    )}%`
+                  : "N/A"}{" "}
+                of activities triggered findings
+              </p>
+            </div>
+          </div>
+
+          {/* Row 3: Threat Results + Recent Activity */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Threat Results (combined) */}
+            <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+              <h3 className="text-sm font-medium text-gray-400 mb-4">
+                Threat Results
+              </h3>
+              <div className="space-y-3">
+                {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map(
+                  (level) => {
+                    const total =
+                      stats.openclawThreatBreakdown?.[level] ?? 0;
+                    const resolved =
+                      stats.resolvedThreatBreakdown?.[level] ?? 0;
+                    const pct =
+                      total > 0 ? Math.round((resolved / total) * 100) : 0;
+                    if (total === 0) return null;
+                    return (
+                      <div key={level}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span
+                            className={`text-xs font-medium ${THREAT_COLORS[level]}`}
+                          >
+                            {level}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {resolved} resolved out of {total} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-gray-800 rounded-full">
+                          <div
+                            className={`h-1.5 rounded-full ${BAR_COLORS[level]}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+                {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).every(
+                  (level) =>
+                    (stats.openclawThreatBreakdown?.[level] ?? 0) === 0,
                 ) && (
-                  <span className="text-xs text-gray-500">No activity</span>
+                  <p className="text-xs text-gray-500">
+                    No threats detected yet.
+                  </p>
                 )}
               </div>
             </div>
-          </div>
 
-          {/* Threat Breakdown & Active Sessions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            {/* Recent Activity */}
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
               <h3 className="text-sm font-medium text-gray-400 mb-4">
-                Threat Breakdown
+                Recent Activity
               </h3>
-              <div className="space-y-3">
-                {(
-                  ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"] as const
-                ).map((level) => {
-                  const count = stats.threatBreakdown[level] ?? 0;
-                  const total = stats.totalCommands || 1;
-                  const pct = Math.round((count / total) * 100);
-                  return (
-                    <div key={level}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span
-                          className={`text-xs font-medium ${THREAT_COLORS[level]}`}
-                        >
-                          {level}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {count} ({pct}%)
-                        </span>
-                      </div>
-                      <div className="w-full h-1.5 bg-gray-800 rounded-full">
-                        <div
-                          className={`h-1.5 rounded-full ${
-                            level === "CRITICAL"
-                              ? "bg-danger"
-                              : level === "HIGH"
-                                ? "bg-warning"
-                                : level === "MEDIUM"
-                                  ? "bg-primary"
-                                  : level === "LOW"
-                                    ? "bg-gray-500"
-                                    : "bg-success"
-                          }`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
+              {recentActivities.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  No activities recorded yet. Activity will appear here as your
+                  AI agent runs.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {recentActivities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-center gap-3 py-2 border-b border-gray-800 last:border-0"
+                    >
+                      <span
+                        className={`text-xs font-medium ${THREAT_COLORS[activity.threatLevel]}`}
+                      >
+                        {activity.threatLevel}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {activity.activityType}
+                      </span>
+                      <span className="text-xs text-gray-300 flex-1 truncate">
+                        {activity.detail}
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        {new Date(activity.timestamp).toLocaleTimeString()}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
-
-            <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-              <h3 className="text-sm font-medium text-gray-400 mb-4">
-                System Status
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">
-                    Active Sessions
-                  </span>
-                  <span className="text-sm font-medium text-gray-200">
-                    {stats.activeSessions}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">
-                    Commands Processed
-                  </span>
-                  <span className="text-sm font-medium text-gray-200">
-                    {stats.totalCommands}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Block Rate</span>
-                  <span className="text-sm font-medium text-gray-200">
-                    {stats.totalCommands > 0
-                      ? `${Math.round((stats.blockedCommands / stats.totalCommands) * 100)}%`
-                      : "N/A"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-            <h3 className="text-sm font-medium text-gray-400 mb-4">
-              Recent Activity
-            </h3>
-            {recentCommands.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                No commands recorded yet. Activity will appear here as your AI
-                agent runs.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {recentCommands.map((cmd) => (
-                  <div
-                    key={cmd.id}
-                    className="flex items-center gap-3 py-2 border-b border-gray-800 last:border-0"
-                  >
-                    <span
-                      className={`text-xs font-medium ${THREAT_COLORS[cmd.threatLevel]}`}
-                    >
-                      {cmd.threatLevel}
-                    </span>
-                    <code className="text-xs text-gray-300 flex-1 truncate">
-                      {cmd.command}
-                    </code>
-                    <span
-                      className={`text-xs font-medium ${STATUS_COLORS[cmd.status]}`}
-                    >
-                      {cmd.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </>
       ) : (

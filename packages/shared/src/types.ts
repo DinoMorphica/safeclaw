@@ -102,6 +102,8 @@ export interface AgentActivity {
   readContentPreview: string | null;
   secretsDetected: string[] | null;
   threatFindings: ThreatFinding[] | null;
+  resolved: boolean;
+  resolvedAt: string | null;
 }
 
 export interface OpenClawSession {
@@ -138,6 +140,7 @@ export interface ServerToClientEvents {
   "safeclaw:openclawActivity": (payload: AgentActivity) => void;
   "safeclaw:openclawSessionUpdate": (payload: OpenClawSession) => void;
   "safeclaw:openclawMonitorStatus": (payload: OpenClawMonitorStatus) => void;
+  "safeclaw:threatResolved": (payload: AgentActivity) => void;
 }
 
 export interface ClientToServerEvents {
@@ -163,6 +166,15 @@ export interface ClientToServerEvents {
   }) => void;
   "safeclaw:getOpenclawMonitorStatus": () => void;
   "safeclaw:reconnectOpenclaw": () => void;
+  "safeclaw:resolveActivity": (payload: {
+    activityId: number;
+    resolved: boolean;
+  }) => void;
+  "safeclaw:getThreats": (payload: {
+    severity?: ThreatLevel;
+    resolved?: boolean;
+    limit: number;
+  }) => void;
 }
 
 export interface DashboardStats {
@@ -174,6 +186,11 @@ export interface DashboardStats {
   openclawActivities: number;
   openclawActiveSessions: number;
   openclawThreatBreakdown: Record<ThreatLevel, number>;
+  resolvedThreatBreakdown: Record<ThreatLevel, number>;
+  threatDetectionRate: {
+    activitiesWithThreats: number;
+    totalActivities: number;
+  };
 }
 
 // --- Config file shape ---

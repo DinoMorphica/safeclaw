@@ -89,4 +89,6 @@ export const agentActivities = sqliteTable("agent_activities", {
   readContentPreview: text("read_content_preview"),
   secretsDetected: text("secrets_detected"),
   threatFindings: text("threat_findings"),
+  resolved: integer("resolved").notNull().default(0),
+  resolvedAt: text("resolved_at"),
 });

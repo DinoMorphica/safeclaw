@@ -96,6 +96,16 @@ export function pushSchema(): void {
       "ALTER TABLE agent_activities ADD COLUMN threat_findings TEXT",
     );
   }
+  if (!columnNames.has("resolved")) {
+    sqlite.exec(
+      "ALTER TABLE agent_activities ADD COLUMN resolved INTEGER NOT NULL DEFAULT 0",
+    );
+  }
+  if (!columnNames.has("resolved_at")) {
+    sqlite.exec(
+      "ALTER TABLE agent_activities ADD COLUMN resolved_at TEXT",
+    );
+  }
 
   sqlite.exec(
     "CREATE INDEX IF NOT EXISTS idx_agent_activities_run_id ON agent_activities(run_id)",
