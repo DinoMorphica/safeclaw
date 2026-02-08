@@ -26,6 +26,11 @@ export function OpenClawPage() {
   const [allowFrom, setAllowFrom] = useState("");
   const [maxConcurrent, setMaxConcurrent] = useState("");
   const [subagentMaxConcurrent, setSubagentMaxConcurrent] = useState("");
+  const [gatewayBind, setGatewayBind] = useState("loopback");
+  const [selfChatMode, setSelfChatMode] = useState(false);
+  const [pluginOverrides, setPluginOverrides] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     socket.emit("safeclaw:getOpenclawConfig");
@@ -44,6 +49,9 @@ export function OpenClawPage() {
       setSubagentMaxConcurrent(
         String(data.agents?.defaults?.subagents?.maxConcurrent ?? ""),
       );
+      setGatewayBind(data.gateway?.bind ?? "loopback");
+      setSelfChatMode(data.channels?.whatsapp?.selfChatMode ?? false);
+      setPluginOverrides({});
     };
 
     socket.on("safeclaw:openclawConfig", handler);
@@ -93,6 +101,26 @@ export function OpenClawPage() {
     });
   };
 
+  const saveGatewayBind = () => {
+    handleSave({
+      gateway: {
+        bind: gatewayBind,
+      },
+    });
+  };
+
+  const togglePlugin = (pluginName: string, currentEnabled: boolean) => {
+    const newValue = !currentEnabled;
+    setPluginOverrides((prev) => ({ ...prev, [pluginName]: newValue }));
+    handleSave({
+      plugins: {
+        entries: {
+          [pluginName]: { enabled: newValue },
+        },
+      },
+    });
+  };
+
   const saveChannel = () => {
     const numbers = allowFrom
       .split(",")
@@ -103,6 +131,7 @@ export function OpenClawPage() {
         whatsapp: {
           dmPolicy,
           allowFrom: numbers.length > 0 ? numbers : undefined,
+          selfChatMode,
         },
       },
     });
@@ -286,9 +315,65 @@ export function OpenClawPage() {
                 className="w-full rounded-lg bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-primary"
               />
             </div>
+            <div className="flex items-center justify-between py-2">
+              <div>
+                <label className="text-sm text-gray-400">Self Chat Mode</label>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Allow the agent to receive messages from yourself
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelfChatMode(!selfChatMode)}
+                className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors cursor-pointer ${
+                  selfChatMode ? "bg-primary" : "bg-gray-700"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                    selfChatMode ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
             <div className="flex justify-end">
               <SaveButton onClick={saveChannel} saving={saving} />
             </div>
+          </div>
+        </Section>
+
+        {/* Security: Gateway Bind Address */}
+        <Section
+          title="Gateway Bind Address"
+          badge={gatewayBind !== "loopback" ? "DANGER" : undefined}
+        >
+          <p className="text-sm text-gray-500 mb-3">
+            Controls which network interface the OpenClaw gateway listens on.
+            Binding to <code>0.0.0.0</code> exposes the gateway to your entire
+            network.
+          </p>
+          {gatewayBind !== "loopback" && (
+            <div className="rounded-lg bg-red-900/30 border border-red-700/50 px-4 py-2 mb-3">
+              <p className="text-sm text-red-400">
+                The gateway is bound to <code>{gatewayBind}</code>, which
+                exposes it beyond localhost. Unless you need remote access, set
+                this to &quot;loopback&quot; for security.
+              </p>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <select
+              value={gatewayBind}
+              onChange={(e) => setGatewayBind(e.target.value)}
+              className="flex-1 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-primary"
+            >
+              <option value="loopback">loopback (recommended)</option>
+              <option value="0.0.0.0">0.0.0.0 (all interfaces)</option>
+              {gatewayBind !== "loopback" && gatewayBind !== "0.0.0.0" && (
+                <option value={gatewayBind}>{gatewayBind} (custom)</option>
+              )}
+            </select>
+            <SaveButton onClick={saveGatewayBind} saving={saving} />
           </div>
         </Section>
 
@@ -300,7 +385,6 @@ export function OpenClawPage() {
               label="Port"
               value={String(config.gateway?.port ?? "—")}
             />
-            <InfoRow label="Bind" value={config.gateway?.bind ?? "—"} />
             <InfoRow
               label="Auth mode"
               value={config.gateway?.auth?.mode ?? "—"}
@@ -312,18 +396,40 @@ export function OpenClawPage() {
           </div>
         </Section>
 
-        {/* Plugins (read-only) */}
+        {/* Plugins (toggleable) */}
         <Section title="Plugins">
+          <p className="text-sm text-gray-500 mb-3">
+            Enable or disable individual OpenClaw plugins. Use Access Control
+            for a master toggle that disables all plugins at once.
+          </p>
           <div className="space-y-2">
             {config.plugins?.entries &&
             Object.keys(config.plugins.entries).length > 0 ? (
-              Object.entries(config.plugins.entries).map(([name, entry]) => (
-                <InfoRow
-                  key={name}
-                  label={name}
-                  value={entry.enabled ? "Enabled" : "Disabled"}
-                />
-              ))
+              Object.entries(config.plugins.entries).map(([name, entry]) => {
+                const isEnabled =
+                  pluginOverrides[name] ?? (entry.enabled ?? false);
+                return (
+                  <div
+                    key={name}
+                    className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0"
+                  >
+                    <span className="text-sm text-gray-200">{name}</span>
+                    <button
+                      type="button"
+                      onClick={() => togglePlugin(name, isEnabled)}
+                      className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors cursor-pointer ${
+                        isEnabled ? "bg-primary" : "bg-gray-700"
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                          isEnabled ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                );
+              })
             ) : (
               <p className="text-sm text-gray-500">No plugins configured.</p>
             )}
@@ -358,15 +464,22 @@ function Section({
   children,
 }: {
   title: string;
-  badge?: string;
+  badge?: "WARN" | "DANGER";
   children: React.ReactNode;
 }) {
+  const badgeStyles =
+    badge === "DANGER"
+      ? "bg-red-900/50 text-red-400 border border-red-700/50"
+      : "bg-yellow-900/50 text-yellow-400 border border-yellow-700/50";
+
   return (
     <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
       <div className="flex items-center gap-2 mb-4">
         <h3 className="text-sm font-medium text-gray-200">{title}</h3>
         {badge && (
-          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-900/50 text-yellow-400 border border-yellow-700/50">
+          <span
+            className={`px-2 py-0.5 text-xs font-medium rounded-full ${badgeStyles}`}
+          >
             {badge}
           </span>
         )}

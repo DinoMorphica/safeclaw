@@ -715,6 +715,35 @@ export class OpenClawClient extends EventEmitter {
     return this.status;
   }
 
+  // --- Exec approval resolution ---
+
+  async resolveExecApproval(
+    approvalId: string,
+    decision: "allow-once" | "allow-always" | "deny",
+  ): Promise<boolean> {
+    try {
+      const res = await this.sendRequest("exec.approval.resolve", {
+        id: approvalId,
+        decision,
+      });
+      if (res.ok) {
+        logger.info({ approvalId, decision }, "Exec approval resolved");
+        return true;
+      }
+      logger.error(
+        { approvalId, decision, error: res.error },
+        "Exec approval resolution rejected",
+      );
+      return false;
+    } catch (err) {
+      logger.error(
+        { err, approvalId, decision },
+        "Failed to resolve exec approval",
+      );
+      return false;
+    }
+  }
+
   // --- Lifecycle ---
 
   reconnect(): void {

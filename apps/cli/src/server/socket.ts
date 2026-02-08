@@ -10,6 +10,7 @@ import { logger } from "../lib/logger.js";
 import { readConfig, writeConfig } from "../lib/config.js";
 import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.js";
 import { getOpenClawMonitor } from "../services/openclaw-monitor.js";
+import { deriveAccessState, applyAccessToggle } from "../services/access-control.js";
 
 export type TypedSocketServer = SocketIOServer<
   ClientToServerEvents,
@@ -154,26 +155,27 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
       socket.emit("safeclaw:accessConfig", config);
     });
 
+    socket.on("safeclaw:getAccessControlState", () => {
+      const state = deriveAccessState();
+      socket.emit("safeclaw:accessControlState", state);
+    });
+
     socket.on("safeclaw:toggleAccess", async ({ category, enabled }) => {
-      const db = getDb();
-      await db
-        .update(schema.accessConfig)
-        .set({
-          value: enabled ? "true" : "false",
-          updatedAt: sql`datetime('now')`,
-        })
-        .where(
-          and(
-            eq(schema.accessConfig.category, category),
-            eq(schema.accessConfig.key, "enabled"),
-          ),
+      try {
+        const toggles = await applyAccessToggle(
+          category as "filesystem" | "mcp_servers" | "network" | "system_commands",
+          enabled,
         );
-
-      logger.info(`Access config ${category} set to ${enabled}`);
-
-      // Send updated config to all clients
-      const config = await db.select().from(schema.accessConfig);
-      io!.emit("safeclaw:accessConfig", config);
+        logger.info(`Access toggle: ${category} set to ${enabled}`);
+        io!.emit("safeclaw:accessControlState", {
+          toggles,
+          openclawConfigAvailable: true,
+        });
+      } catch (err) {
+        logger.error({ err, category, enabled }, "Failed to apply access toggle");
+        const state = deriveAccessState();
+        io!.emit("safeclaw:accessControlState", state);
+      }
     });
 
     socket.on("safeclaw:getSettings", async () => {
@@ -245,6 +247,67 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
       const threats = await monitor.getThreats(severity, resolved, limit);
       for (const threat of threats) {
         socket.emit("safeclaw:openclawActivity", threat);
+      }
+    });
+
+    // --- Exec Approval events ---
+
+    socket.on("safeclaw:execDecision", ({ approvalId, decision }) => {
+      const monitor = getOpenClawMonitor();
+      if (!monitor) return;
+      const service = monitor.getExecApprovalService();
+      service.handleDecision(approvalId, decision);
+    });
+
+    socket.on("safeclaw:getPendingApprovals", () => {
+      const monitor = getOpenClawMonitor();
+      if (!monitor) return;
+      const service = monitor.getExecApprovalService();
+      const pending = service.getPendingApprovals();
+      for (const entry of pending) {
+        socket.emit("safeclaw:execApprovalRequested", entry);
+      }
+    });
+
+    socket.on("safeclaw:getApprovalHistory", ({ limit }) => {
+      const monitor = getOpenClawMonitor();
+      if (!monitor) return;
+      const service = monitor.getExecApprovalService();
+      const history = service.getHistory(limit);
+      for (const entry of history) {
+        socket.emit("safeclaw:execApprovalResolved", entry);
+      }
+    });
+
+    socket.on("safeclaw:getAllowlist", () => {
+      const monitor = getOpenClawMonitor();
+      if (!monitor) return;
+      const service = monitor.getExecApprovalService();
+      const patterns = service.getRestrictedPatterns();
+      socket.emit("safeclaw:allowlistState", {
+        patterns: patterns.map((p) => ({ pattern: p })),
+      });
+    });
+
+    socket.on("safeclaw:addAllowlistPattern", ({ pattern }) => {
+      const monitor = getOpenClawMonitor();
+      if (!monitor) return;
+      const service = monitor.getExecApprovalService();
+      try {
+        service.addRestrictedPattern(pattern);
+      } catch (err) {
+        logger.error({ err, pattern }, "Failed to add restricted pattern");
+      }
+    });
+
+    socket.on("safeclaw:removeAllowlistPattern", ({ pattern }) => {
+      const monitor = getOpenClawMonitor();
+      if (!monitor) return;
+      const service = monitor.getExecApprovalService();
+      try {
+        service.removeRestrictedPattern(pattern);
+      } catch (err) {
+        logger.error({ err, pattern }, "Failed to remove restricted pattern");
       }
     });
 

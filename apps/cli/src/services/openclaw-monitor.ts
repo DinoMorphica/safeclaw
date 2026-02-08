@@ -3,6 +3,11 @@ import {
   type ParsedActivity,
 } from "../lib/openclaw-client.js";
 import { SessionWatcher, type SessionFileActivity } from "./session-watcher.js";
+import {
+  ExecApprovalService,
+  createExecApprovalService,
+} from "./exec-approval-service.js";
+import { ensureDefaults } from "../lib/exec-approvals-config.js";
 import { analyzeActivityThreat } from "../interceptor.js";
 import { getDb, schema } from "../db/index.js";
 import { eq, ne, desc, and, sql } from "drizzle-orm";
@@ -23,6 +28,7 @@ let instance: OpenClawMonitor | null = null;
 export class OpenClawMonitor {
   private client: OpenClawClient;
   private sessionWatcher: SessionWatcher;
+  private execApprovalService: ExecApprovalService;
   private io: TypedSocketServer;
   private lastEventAt: string | null = null;
 
@@ -30,7 +36,11 @@ export class OpenClawMonitor {
     this.io = io;
     this.client = new OpenClawClient();
     this.sessionWatcher = new SessionWatcher();
+    this.execApprovalService = createExecApprovalService(this.client, io);
     this.setupListeners();
+
+    // Ensure exec-approvals.json is configured for command interception
+    ensureDefaults();
   }
 
   private setupListeners(): void {
@@ -65,6 +75,10 @@ export class OpenClawMonitor {
 
     this.client.on("statusChange", (_status: OpenClawConnectionStatus) => {
       this.broadcastStatus();
+    });
+
+    this.client.on("execApproval", (request) => {
+      this.execApprovalService.handleRequest(request);
     });
 
     // Session file watcher activities (tool calls with content)
@@ -433,6 +447,10 @@ export class OpenClawMonitor {
     });
   }
 
+  getExecApprovalService(): ExecApprovalService {
+    return this.execApprovalService;
+  }
+
   start(): void {
     this.client.connect();
     this.sessionWatcher.start();
@@ -443,6 +461,7 @@ export class OpenClawMonitor {
   }
 
   stop(): void {
+    this.execApprovalService.destroy();
     this.client.destroy();
     this.sessionWatcher.stop();
   }

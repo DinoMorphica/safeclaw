@@ -141,6 +141,10 @@ export interface ServerToClientEvents {
   "safeclaw:openclawSessionUpdate": (payload: OpenClawSession) => void;
   "safeclaw:openclawMonitorStatus": (payload: OpenClawMonitorStatus) => void;
   "safeclaw:threatResolved": (payload: AgentActivity) => void;
+  "safeclaw:accessControlState": (payload: AccessControlState) => void;
+  "safeclaw:execApprovalRequested": (payload: ExecApprovalEntry) => void;
+  "safeclaw:execApprovalResolved": (payload: ExecApprovalEntry) => void;
+  "safeclaw:allowlistState": (payload: AllowlistState) => void;
 }
 
 export interface ClientToServerEvents {
@@ -166,6 +170,7 @@ export interface ClientToServerEvents {
   }) => void;
   "safeclaw:getOpenclawMonitorStatus": () => void;
   "safeclaw:reconnectOpenclaw": () => void;
+  "safeclaw:getAccessControlState": () => void;
   "safeclaw:resolveActivity": (payload: {
     activityId: number;
     resolved: boolean;
@@ -175,6 +180,15 @@ export interface ClientToServerEvents {
     resolved?: boolean;
     limit: number;
   }) => void;
+  "safeclaw:execDecision": (payload: {
+    approvalId: string;
+    decision: ExecDecision;
+  }) => void;
+  "safeclaw:getPendingApprovals": () => void;
+  "safeclaw:getApprovalHistory": (payload: { limit: number }) => void;
+  "safeclaw:getAllowlist": () => void;
+  "safeclaw:addAllowlistPattern": (payload: { pattern: string }) => void;
+  "safeclaw:removeAllowlistPattern": (payload: { pattern: string }) => void;
 }
 
 export interface DashboardStats {
@@ -193,6 +207,30 @@ export interface DashboardStats {
   };
 }
 
+// --- Exec approval types ---
+export type ExecDecision = "allow-once" | "allow-always" | "deny";
+
+export interface ExecApprovalEntry {
+  id: string;
+  command: string;
+  cwd: string;
+  security: string;
+  sessionKey: string;
+  requestedAt: string;
+  expiresAt: string;
+  decision: ExecDecision | null;
+  decidedBy: "user" | "auto-deny" | null;
+  decidedAt: string | null;
+}
+
+export interface AllowlistPattern {
+  pattern: string;
+}
+
+export interface AllowlistState {
+  patterns: AllowlistPattern[];
+}
+
 // --- Config file shape ---
 export interface SafeClawConfig {
   version: string;
@@ -202,7 +240,52 @@ export interface SafeClawConfig {
   userId: string | null;
 }
 
+// --- Access control types ---
+export type AccessCategory =
+  | "filesystem"
+  | "mcp_servers"
+  | "network"
+  | "system_commands";
+
+export interface AccessToggleState {
+  category: AccessCategory;
+  enabled: boolean;
+}
+
+export interface AccessControlState {
+  toggles: AccessToggleState[];
+  openclawConfigAvailable: boolean;
+}
+
 // --- OpenClaw config shape (mirrors ~/.openclaw/openclaw.json) ---
+export interface OpenClawToolsExec {
+  host?: string;
+  security?: "deny" | "allowlist" | "full";
+  ask?: "off" | "on-miss" | "always";
+}
+
+export interface OpenClawToolsConfig {
+  allow?: string[];
+  deny?: string[];
+  profile?: string;
+  exec?: OpenClawToolsExec;
+}
+
+export interface OpenClawBrowserConfig {
+  enabled?: boolean;
+}
+
+export interface OpenClawSandboxDockerConfig {
+  binds?: string[];
+  network?: string;
+}
+
+export interface OpenClawSandboxConfig {
+  mode?: "off" | "non-main" | "all";
+  workspaceAccess?: "none" | "ro" | "rw";
+  docker?: OpenClawSandboxDockerConfig;
+}
+
 export interface OpenClawConfig {
   messages?: {
     ackReactionScope?: string;
@@ -217,6 +300,7 @@ export interface OpenClawConfig {
         mode?: string;
       };
       workspace?: string;
+      sandbox?: OpenClawSandboxConfig;
       model?: {
         primary?: string;
       };
@@ -254,6 +338,8 @@ export interface OpenClawConfig {
       }
     >;
   };
+  tools?: OpenClawToolsConfig;
+  browser?: OpenClawBrowserConfig;
   channels?: {
     whatsapp?: {
       selfChatMode?: boolean;

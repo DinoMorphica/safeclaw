@@ -4,7 +4,6 @@ import { ensureDataDir } from "../lib/config.js";
 
 const DEFAULT_ACCESS_CONFIG = [
   { category: "filesystem", key: "enabled", value: "true" },
-  { category: "database", key: "enabled", value: "false" },
   { category: "mcp_servers", key: "enabled", value: "true" },
   { category: "network", key: "enabled", value: "true" },
   { category: "system_commands", key: "enabled", value: "false" },
@@ -139,6 +138,9 @@ export function pushSchema(): void {
       DELETE FROM openclaw_sessions WHERE id = 'unknown';
     `);
   }
+
+  // Migration: Remove "database" access category (no OpenClaw equivalent)
+  sqlite.exec("DELETE FROM access_config WHERE category = 'database'");
 
   sqlite.close();
 }

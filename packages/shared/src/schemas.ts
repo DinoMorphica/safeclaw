@@ -100,66 +100,131 @@ export const openClawSessionSchema = z.object({
   threatSummary: z.record(threatLevelSchema, z.number()),
 });
 
+export const openClawToolsExecSchema = z.object({
+  host: z.string().optional(),
+  security: z.enum(["deny", "allowlist", "full"]).optional(),
+  ask: z.enum(["off", "on-miss", "always"]).optional(),
+}).passthrough();
+
+export const openClawToolsConfigSchema = z.object({
+  allow: z.array(z.string()).optional(),
+  deny: z.array(z.string()).optional(),
+  profile: z.string().optional(),
+  exec: openClawToolsExecSchema.optional(),
+}).passthrough();
+
+export const openClawBrowserConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+}).passthrough();
+
+export const accessCategorySchema = z.enum([
+  "filesystem", "mcp_servers", "network", "system_commands",
+]);
+
+export const accessToggleStateSchema = z.object({
+  category: accessCategorySchema,
+  enabled: z.boolean(),
+});
+
+export const openClawSandboxDockerConfigSchema = z.object({
+  binds: z.array(z.string()).optional(),
+  network: z.string().optional(),
+}).passthrough();
+
+export const openClawSandboxConfigSchema = z.object({
+  mode: z.enum(["off", "non-main", "all"]).optional(),
+  workspaceAccess: z.enum(["none", "ro", "rw"]).optional(),
+  docker: openClawSandboxDockerConfigSchema.optional(),
+}).passthrough();
+
 export const openClawConfigSchema = z.object({
   messages: z.object({
     ackReactionScope: z.string().optional(),
-  }).optional(),
+  }).passthrough().optional(),
   agents: z.object({
     defaults: z.object({
       maxConcurrent: z.number().optional(),
       subagents: z.object({
         maxConcurrent: z.number().optional(),
-      }).optional(),
+      }).passthrough().optional(),
       compaction: z.object({
         mode: z.string().optional(),
-      }).optional(),
+      }).passthrough().optional(),
       workspace: z.string().optional(),
+      sandbox: openClawSandboxConfigSchema.optional(),
       model: z.object({
         primary: z.string().optional(),
-      }).optional(),
+      }).passthrough().optional(),
       models: z.record(z.record(z.unknown())).optional(),
-    }).optional(),
-  }).optional(),
+    }).passthrough().optional(),
+  }).passthrough().optional(),
   gateway: z.object({
     mode: z.string().optional(),
     auth: z.object({
       mode: z.string().optional(),
       token: z.string().optional(),
-    }).optional(),
+    }).passthrough().optional(),
     port: z.number().optional(),
     bind: z.string().optional(),
     trustedProxies: z.array(z.string()).optional(),
     tailscale: z.object({
       mode: z.string().optional(),
       resetOnExit: z.boolean().optional(),
-    }).optional(),
-  }).optional(),
+    }).passthrough().optional(),
+  }).passthrough().optional(),
   auth: z.object({
     profiles: z.record(z.object({
       provider: z.string().optional(),
       mode: z.string().optional(),
-    })).optional(),
-  }).optional(),
+    }).passthrough()).optional(),
+  }).passthrough().optional(),
   plugins: z.object({
     entries: z.record(z.object({
       enabled: z.boolean().optional(),
-    })).optional(),
-  }).optional(),
+    }).passthrough()).optional(),
+  }).passthrough().optional(),
+  tools: openClawToolsConfigSchema.optional(),
+  browser: openClawBrowserConfigSchema.optional(),
   channels: z.object({
     whatsapp: z.object({
       selfChatMode: z.boolean().optional(),
       dmPolicy: z.string().optional(),
       allowFrom: z.array(z.string()).optional(),
-    }).optional(),
-  }).optional(),
+    }).passthrough().optional(),
+  }).passthrough().optional(),
   wizard: z.object({
     lastRunAt: z.string().optional(),
     lastRunVersion: z.string().optional(),
     lastRunCommand: z.string().optional(),
     lastRunMode: z.string().optional(),
-  }).optional(),
+  }).passthrough().optional(),
   meta: z.object({
     lastTouchedVersion: z.string().optional(),
     lastTouchedAt: z.string().optional(),
-  }).optional(),
+  }).passthrough().optional(),
 }).passthrough();
+
+// --- Exec approval schemas ---
+
+export const execDecisionSchema = z.enum(["allow-once", "allow-always", "deny"]);
+
+export const execApprovalEntrySchema = z.object({
+  id: z.string(),
+  command: z.string(),
+  cwd: z.string(),
+  security: z.string(),
+  sessionKey: z.string(),
+  requestedAt: z.string(),
+  expiresAt: z.string(),
+  decision: execDecisionSchema.nullable(),
+  decidedBy: z.enum(["user", "auto-deny"]).nullable(),
+  decidedAt: z.string().nullable(),
+});
+
+export const allowlistPatternSchema = z.object({
+  pattern: z.string().min(1),
+});
+
+export const allowlistStateSchema = z.object({
+  patterns: z.array(allowlistPatternSchema),
+});
