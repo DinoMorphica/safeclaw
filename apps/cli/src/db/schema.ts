@@ -92,3 +92,29 @@ export const agentActivities = sqliteTable("agent_activities", {
   resolved: integer("resolved").notNull().default(0),
   resolvedAt: text("resolved_at"),
 });
+
+export const restrictedPatterns = sqliteTable("restricted_patterns", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  pattern: text("pattern").notNull().unique(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const execApprovals = sqliteTable("exec_approvals", {
+  id: text("id").primaryKey(),
+  command: text("command").notNull(),
+  cwd: text("cwd").notNull(),
+  security: text("security").notNull(),
+  sessionKey: text("session_key").notNull(),
+  requestedAt: text("requested_at").notNull(),
+  expiresAt: text("expires_at").notNull(),
+  decision: text("decision", {
+    enum: ["allow-once", "allow-always", "deny"],
+  }),
+  decidedBy: text("decided_by", {
+    enum: ["user", "auto-deny"],
+  }),
+  decidedAt: text("decided_at"),
+  matchedPattern: text("matched_pattern"),
+});

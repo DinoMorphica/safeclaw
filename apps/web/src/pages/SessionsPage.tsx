@@ -1,24 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { socket } from "../lib/socket";
 import { groupActivitiesByToolCall } from "../lib/activityGrouper";
-import { parseRawPayload } from "../lib/activityParser";
 import { ActivityRow, ActivityDetailPanel } from "../components/ActivityDetails";
 import type {
-  Session,
   OpenClawSession,
   AgentActivity,
   OpenClawMonitorStatus,
   ThreatLevel,
-  ActivityType,
 } from "@safeclaw/shared";
-
-const THREAT_COLORS: Record<ThreatLevel, string> = {
-  CRITICAL: "bg-red-500",
-  HIGH: "bg-orange-500",
-  MEDIUM: "bg-yellow-500",
-  LOW: "bg-blue-500",
-  NONE: "bg-gray-500",
-};
 
 const THREAT_TEXT_COLORS: Record<ThreatLevel, string> = {
   CRITICAL: "text-red-400",
@@ -29,8 +18,6 @@ const THREAT_TEXT_COLORS: Record<ThreatLevel, string> = {
 };
 
 export function SessionsPage() {
-  const [tab, setTab] = useState<"openclaw" | "safeclaw">("openclaw");
-  const [safeclawSessions, setSafeclawSessions] = useState<Session[]>([]);
   const [openclawSessions, setOpenclawSessions] = useState<OpenClawSession[]>(
     [],
   );
@@ -41,11 +28,6 @@ export function SessionsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/sessions")
-      .then((res) => res.json())
-      .then(setSafeclawSessions)
-      .catch(() => {});
-
     socket.emit("safeclaw:getOpenclawSessions");
     socket.emit("safeclaw:getOpenclawMonitorStatus");
 
@@ -74,22 +56,9 @@ export function SessionsPage() {
       setLoading(false);
     };
 
-    const handleSafeclawSession = (session: Session) => {
-      setSafeclawSessions((prev) => {
-        const idx = prev.findIndex((s) => s.id === session.id);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = session;
-          return updated;
-        }
-        return [session, ...prev];
-      });
-    };
-
     socket.on("safeclaw:openclawSessionUpdate", handleOpenClawSession);
     socket.on("safeclaw:openclawActivity", handleActivity);
     socket.on("safeclaw:openclawMonitorStatus", handleMonitorStatus);
-    socket.on("safeclaw:sessionUpdate", handleSafeclawSession);
 
     const timer = setTimeout(() => setLoading(false), 2000);
 
@@ -97,7 +66,6 @@ export function SessionsPage() {
       socket.off("safeclaw:openclawSessionUpdate", handleOpenClawSession);
       socket.off("safeclaw:openclawActivity", handleActivity);
       socket.off("safeclaw:openclawMonitorStatus", handleMonitorStatus);
-      socket.off("safeclaw:sessionUpdate", handleSafeclawSession);
       clearTimeout(timer);
     };
   }, []);
@@ -161,45 +129,15 @@ export function SessionsPage() {
           )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-4">
-        <button
-          type="button"
-          onClick={() => setTab("openclaw")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-            tab === "openclaw"
-              ? "bg-primary/10 text-primary"
-              : "text-gray-400 hover:bg-gray-800 hover:text-gray-200"
-          }`}
-        >
-          OpenClaw Sessions
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("safeclaw")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-            tab === "safeclaw"
-              ? "bg-primary/10 text-primary"
-              : "text-gray-400 hover:bg-gray-800 hover:text-gray-200"
-          }`}
-        >
-          SafeClaw Sessions
-        </button>
-      </div>
-
-      {tab === "openclaw" ? (
-        <OpenClawSessionsTab
-          sessions={openclawSessions}
-          activities={activities}
-          expandedSession={expandedSession}
-          onToggleSession={(id) =>
-            setExpandedSession((prev) => (prev === id ? null : id))
-          }
-          loading={loading}
-        />
-      ) : (
-        <SafeClawSessionsTab sessions={safeclawSessions} />
-      )}
+      <OpenClawSessionsTab
+        sessions={openclawSessions}
+        activities={activities}
+        expandedSession={expandedSession}
+        onToggleSession={(id) =>
+          setExpandedSession((prev) => (prev === id ? null : id))
+        }
+        loading={loading}
+      />
     </div>
   );
 }
@@ -232,8 +170,12 @@ function OpenClawSessionsTab({
     );
   }
 
-  const activeSessions = sessions.filter((s) => s.status === "ACTIVE");
-  const pastSessions = sessions.filter((s) => s.status === "ENDED");
+  const activeSessions = sessions
+    .filter((s) => s.status === "ACTIVE")
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  const pastSessions = sessions
+    .filter((s) => s.status === "ENDED")
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 
   return (
     <div className="space-y-4">
@@ -395,79 +337,6 @@ function SessionCard({
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function SafeClawSessionsTab({ sessions }: { sessions: Session[] }) {
-  const activeSessions = sessions.filter((s) => s.status === "ACTIVE");
-  const pastSessions = sessions.filter((s) => s.status === "ENDED");
-
-  if (sessions.length === 0) {
-    return (
-      <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 text-center">
-        <p className="text-gray-400">No SafeClaw sessions recorded.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {activeSessions.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium text-gray-400 mb-2">Active</h3>
-          <div className="space-y-2">
-            {activeSessions.map((s) => (
-              <SafeClawSessionCard key={s.id} session={s} />
-            ))}
-          </div>
-        </div>
-      )}
-      {pastSessions.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium text-gray-400 mb-2">Past</h3>
-          <div className="space-y-2">
-            {pastSessions.map((s) => (
-              <SafeClawSessionCard key={s.id} session={s} />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SafeClawSessionCard({ session }: { session: Session }) {
-  const isActive = session.status === "ACTIVE";
-  return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <span
-          className={`h-2.5 w-2.5 rounded-full ${isActive ? "bg-success animate-pulse" : "bg-gray-600"}`}
-        />
-        <span className="text-sm font-mono text-gray-200">
-          {session.id.slice(0, 8)}
-        </span>
-      </div>
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-gray-500">
-          Started: {new Date(session.startedAt).toLocaleString()}
-        </span>
-        {session.endedAt && (
-          <span className="text-xs text-gray-500">
-            Ended: {new Date(session.endedAt).toLocaleString()}
-          </span>
-        )}
-        <span
-          className={`text-xs px-2 py-0.5 rounded-full ${
-            isActive
-              ? "bg-success/10 text-success"
-              : "bg-gray-800 text-gray-400"
-          }`}
-        >
-          {session.status}
-        </span>
-      </div>
     </div>
   );
 }

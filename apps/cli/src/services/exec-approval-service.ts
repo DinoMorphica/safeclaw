@@ -1,4 +1,6 @@
+import { eq, desc, sql } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
+import { getDb, schema } from "../db/index.js";
 import type {
   OpenClawClient,
   ExecApprovalRequest,
@@ -9,7 +11,7 @@ import type {
   ExecDecision,
 } from "@safeclaw/shared";
 
-const DEFAULT_TIMEOUT_MS = 30_000; // 30 seconds
+const DEFAULT_TIMEOUT_MS = 600_000; // 10 minutes
 
 interface PendingApproval {
   entry: ExecApprovalEntry;
@@ -34,9 +36,8 @@ export class ExecApprovalService {
   private client: OpenClawClient;
   private io: TypedSocketServer;
   private pending = new Map<string, PendingApproval>();
-  private history: ExecApprovalEntry[] = [];
   private timeoutMs: number;
-  /** Restricted command patterns — commands matching these need user approval */
+  /** In-memory cache of restricted patterns, loaded from DB on init */
   private restrictedPatterns: string[] = [];
 
   constructor(
@@ -47,6 +48,28 @@ export class ExecApprovalService {
     this.client = client;
     this.io = io;
     this.timeoutMs = timeoutMs;
+    this.loadPatternsFromDb();
+  }
+
+  /**
+   * Load restricted patterns from the database into the in-memory cache.
+   * Called once on construction so patterns survive restarts.
+   */
+  private loadPatternsFromDb(): void {
+    try {
+      const db = getDb();
+      const rows = db
+        .select({ pattern: schema.restrictedPatterns.pattern })
+        .from(schema.restrictedPatterns)
+        .all();
+      this.restrictedPatterns = rows.map((r) => r.pattern);
+      logger.info(
+        { count: this.restrictedPatterns.length },
+        "Loaded restricted patterns from database",
+      );
+    } catch (err) {
+      logger.error({ err }, "Failed to load restricted patterns from database");
+    }
   }
 
   /**
@@ -63,21 +86,6 @@ export class ExecApprovalService {
       // Not restricted → auto-approve immediately
       this.resolveToGateway(request.id, "allow-once");
 
-      const now = new Date();
-      const entry: ExecApprovalEntry = {
-        id: request.id,
-        command: request.command,
-        cwd: request.cwd,
-        security: request.security,
-        sessionKey: request.sessionKey,
-        requestedAt: now.toISOString(),
-        expiresAt: now.toISOString(),
-        decision: "allow-once",
-        decidedBy: "auto-deny", // reuse field: "auto-deny" here means "auto-decision"
-        decidedAt: now.toISOString(),
-      };
-
-      // Don't add auto-approved commands to history to reduce noise
       logger.debug(
         { command: request.command },
         "Command auto-approved (not restricted)",
@@ -107,6 +115,9 @@ export class ExecApprovalService {
     }, this.timeoutMs);
 
     this.pending.set(request.id, { entry, timer, matchedPattern });
+
+    // Persist as a pending row in DB (no decision yet)
+    this.persistApproval(entry, matchedPattern);
 
     this.io.emit("safeclaw:execApprovalRequested", entry);
 
@@ -142,7 +153,7 @@ export class ExecApprovalService {
     entry.decidedAt = new Date().toISOString();
 
     this.resolveToGateway(approvalId, decision);
-    this.addToHistory(entry);
+    this.updateApprovalDecision(entry);
 
     // "allow-always" → remove the restricted pattern that triggered this
     if (decision === "allow-always" && pending.matchedPattern) {
@@ -171,7 +182,7 @@ export class ExecApprovalService {
     entry.decidedAt = new Date().toISOString();
 
     this.resolveToGateway(approvalId, "deny");
-    this.addToHistory(entry);
+    this.updateApprovalDecision(entry);
 
     this.io.emit("safeclaw:execApprovalResolved", entry);
 
@@ -193,6 +204,53 @@ export class ExecApprovalService {
         "Failed to send decision to gateway",
       );
     });
+  }
+
+  // --- Database persistence ---
+
+  private persistApproval(
+    entry: ExecApprovalEntry,
+    matchedPattern: string | null,
+  ): void {
+    try {
+      const db = getDb();
+      db.insert(schema.execApprovals)
+        .values({
+          id: entry.id,
+          command: entry.command,
+          cwd: entry.cwd,
+          security: entry.security,
+          sessionKey: entry.sessionKey,
+          requestedAt: entry.requestedAt,
+          expiresAt: entry.expiresAt,
+          decision: entry.decision,
+          decidedBy: entry.decidedBy,
+          decidedAt: entry.decidedAt,
+          matchedPattern,
+        })
+        .run();
+    } catch (err) {
+      logger.error({ err, id: entry.id }, "Failed to persist exec approval");
+    }
+  }
+
+  private updateApprovalDecision(entry: ExecApprovalEntry): void {
+    try {
+      const db = getDb();
+      db.update(schema.execApprovals)
+        .set({
+          decision: entry.decision,
+          decidedBy: entry.decidedBy,
+          decidedAt: entry.decidedAt,
+        })
+        .where(eq(schema.execApprovals.id, entry.id))
+        .run();
+    } catch (err) {
+      logger.error(
+        { err, id: entry.id },
+        "Failed to update exec approval decision",
+      );
+    }
   }
 
   // --- Pattern matching ---
@@ -217,6 +275,18 @@ export class ExecApprovalService {
     if (!trimmed) return this.restrictedPatterns;
     if (!this.restrictedPatterns.includes(trimmed)) {
       this.restrictedPatterns.push(trimmed);
+
+      // Persist to database
+      try {
+        const db = getDb();
+        db.insert(schema.restrictedPatterns)
+          .values({ pattern: trimmed })
+          .onConflictDoNothing()
+          .run();
+      } catch (err) {
+        logger.error({ err, pattern: trimmed }, "Failed to persist restricted pattern");
+      }
+
       logger.info({ pattern: trimmed }, "Added restricted command pattern");
     }
     this.broadcastPatterns();
@@ -227,6 +297,17 @@ export class ExecApprovalService {
     this.restrictedPatterns = this.restrictedPatterns.filter(
       (p) => p !== pattern,
     );
+
+    // Remove from database
+    try {
+      const db = getDb();
+      db.delete(schema.restrictedPatterns)
+        .where(eq(schema.restrictedPatterns.pattern, pattern))
+        .run();
+    } catch (err) {
+      logger.error({ err, pattern }, "Failed to remove restricted pattern from database");
+    }
+
     logger.info({ pattern }, "Removed restricted command pattern");
     this.broadcastPatterns();
     return [...this.restrictedPatterns];
@@ -238,15 +319,6 @@ export class ExecApprovalService {
     });
   }
 
-  // --- History management ---
-
-  private addToHistory(entry: ExecApprovalEntry): void {
-    this.history.unshift(entry);
-    if (this.history.length > 200) {
-      this.history = this.history.slice(0, 200);
-    }
-  }
-
   // --- Query methods ---
 
   getPendingApprovals(): ExecApprovalEntry[] {
@@ -254,7 +326,63 @@ export class ExecApprovalService {
   }
 
   getHistory(limit = 50): ExecApprovalEntry[] {
-    return this.history.slice(0, limit);
+    try {
+      const db = getDb();
+      const rows = db
+        .select()
+        .from(schema.execApprovals)
+        .where(sql`${schema.execApprovals.decision} IS NOT NULL`)
+        .orderBy(desc(schema.execApprovals.decidedAt))
+        .limit(limit)
+        .all();
+      return rows.map((r) => ({
+        id: r.id,
+        command: r.command,
+        cwd: r.cwd,
+        security: r.security,
+        sessionKey: r.sessionKey,
+        requestedAt: r.requestedAt,
+        expiresAt: r.expiresAt,
+        decision: r.decision as ExecDecision | null,
+        decidedBy: r.decidedBy as "user" | "auto-deny" | null,
+        decidedAt: r.decidedAt,
+      }));
+    } catch (err) {
+      logger.error({ err }, "Failed to load approval history from database");
+      return [];
+    }
+  }
+
+  /**
+   * Get total counts for exec approvals from the database.
+   */
+  getStats(): {
+    total: number;
+    blocked: number;
+    allowed: number;
+    pending: number;
+  } {
+    try {
+      const db = getDb();
+      const rows = db.select().from(schema.execApprovals).all();
+      const decided = rows.filter((r) => r.decision !== null);
+      const blocked = decided.filter((r) => r.decision === "deny").length;
+      const allowed = decided.filter(
+        (r) => r.decision === "allow-once" || r.decision === "allow-always",
+      ).length;
+      const pendingDb = rows.filter((r) => r.decision === null).length;
+      // Include live pending approvals not yet in DB
+      const livePending = this.pending.size;
+      return {
+        total: rows.length + livePending - pendingDb, // avoid double-counting DB pending
+        blocked,
+        allowed,
+        pending: livePending,
+      };
+    } catch (err) {
+      logger.error({ err }, "Failed to compute exec approval stats");
+      return { total: 0, blocked: 0, allowed: 0, pending: 0 };
+    }
   }
 
   /**

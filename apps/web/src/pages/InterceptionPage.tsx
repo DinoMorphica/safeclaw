@@ -113,6 +113,11 @@ export function InterceptionPage() {
     [],
   );
 
+  const handleHistoryBatch = useCallback((batch: ExecApprovalEntry[]) => {
+    // Set history directly from batch (already sorted newest-first)
+    setHistory(batch);
+  }, []);
+
   const handleAllowlistState = useCallback((state: AllowlistState) => {
     setAllowlist(state.patterns.map((p) => p.pattern));
   }, []);
@@ -124,6 +129,7 @@ export function InterceptionPage() {
 
     socket.on("safeclaw:execApprovalRequested", handleApprovalRequested);
     socket.on("safeclaw:execApprovalResolved", handleApprovalResolved);
+    socket.on("safeclaw:approvalHistoryBatch", handleHistoryBatch);
     socket.on("safeclaw:allowlistState", handleAllowlistState);
 
     const timeout = setTimeout(() => setLoading(false), 1000);
@@ -131,10 +137,11 @@ export function InterceptionPage() {
     return () => {
       socket.off("safeclaw:execApprovalRequested", handleApprovalRequested);
       socket.off("safeclaw:execApprovalResolved", handleApprovalResolved);
+      socket.off("safeclaw:approvalHistoryBatch", handleHistoryBatch);
       socket.off("safeclaw:allowlistState", handleAllowlistState);
       clearTimeout(timeout);
     };
-  }, [handleApprovalRequested, handleApprovalResolved, handleAllowlistState]);
+  }, [handleApprovalRequested, handleApprovalResolved, handleHistoryBatch, handleAllowlistState]);
 
   // Re-request data on reconnect
   useEffect(() => {

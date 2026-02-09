@@ -5,7 +5,7 @@ import type { SafeClawConfig } from "@safeclaw/shared";
 
 const DEFAULT_CONFIG: SafeClawConfig = {
   version: "0.1.0",
-  port: 3000,
+  port: 54335,
   autoOpenBrowser: true,
   premium: false,
   userId: null,

@@ -144,6 +144,7 @@ export interface ServerToClientEvents {
   "safeclaw:accessControlState": (payload: AccessControlState) => void;
   "safeclaw:execApprovalRequested": (payload: ExecApprovalEntry) => void;
   "safeclaw:execApprovalResolved": (payload: ExecApprovalEntry) => void;
+  "safeclaw:approvalHistoryBatch": (payload: ExecApprovalEntry[]) => void;
   "safeclaw:allowlistState": (payload: AllowlistState) => void;
 }
 
@@ -205,6 +206,10 @@ export interface DashboardStats {
     activitiesWithThreats: number;
     totalActivities: number;
   };
+  execApprovalTotal: number;
+  execApprovalBlocked: number;
+  execApprovalAllowed: number;
+  execApprovalPending: number;
 }
 
 // --- Exec approval types ---

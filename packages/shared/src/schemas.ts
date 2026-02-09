@@ -34,7 +34,7 @@ export const decisionPayloadSchema = z.object({
 
 export const safeClawConfigSchema = z.object({
   version: z.string(),
-  port: z.number().int().min(1024).max(65535).default(3000),
+  port: z.number().int().min(1024).max(65535).default(54335),
   autoOpenBrowser: z.boolean().default(true),
   premium: z.boolean().default(false),
   userId: z.string().nullable().default(null),

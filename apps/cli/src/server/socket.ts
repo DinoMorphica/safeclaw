@@ -53,6 +53,22 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
         .from(schema.openclawSessions)
         .where(eq(schema.openclawSessions.status, "ACTIVE"));
 
+      // Exec approval stats (from database)
+      let execApprovalTotal = 0;
+      let execApprovalBlocked = 0;
+      let execApprovalAllowed = 0;
+      let execApprovalPending = 0;
+
+      const monitor = getOpenClawMonitor();
+      if (monitor) {
+        const approvalService = monitor.getExecApprovalService();
+        const approvalStats = approvalService.getStats();
+        execApprovalTotal = approvalStats.total;
+        execApprovalBlocked = approvalStats.blocked;
+        execApprovalAllowed = approvalStats.allowed;
+        execApprovalPending = approvalStats.pending;
+      }
+
       const stats = {
         totalCommands: allLogs.length,
         blockedCommands: allLogs.filter((l) => l.status === "BLOCKED").length,
@@ -85,6 +101,10 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
           activitiesWithThreats: allActivities.filter((a) => a.threatLevel !== "NONE").length,
           totalActivities: allActivities.length,
         },
+        execApprovalTotal,
+        execApprovalBlocked,
+        execApprovalAllowed,
+        execApprovalPending,
       };
       socket.emit("safeclaw:stats", stats);
     });
@@ -274,9 +294,8 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
       if (!monitor) return;
       const service = monitor.getExecApprovalService();
       const history = service.getHistory(limit);
-      for (const entry of history) {
-        socket.emit("safeclaw:execApprovalResolved", entry);
-      }
+      // Send history as a batch to preserve newest-first ordering
+      socket.emit("safeclaw:approvalHistoryBatch", history);
     });
 
     socket.on("safeclaw:getAllowlist", () => {

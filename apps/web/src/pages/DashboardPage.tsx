@@ -1,20 +1,20 @@
 import { useEffect, useState, useCallback } from "react";
 import { socket } from "../lib/socket";
-import type { DashboardStats, AgentActivity } from "@safeclaw/shared";
+import type { DashboardStats, AgentActivity, ExecApprovalEntry } from "@safeclaw/shared";
 
 const THREAT_COLORS: Record<string, string> = {
   CRITICAL: "text-danger",
   HIGH: "text-warning",
-  MEDIUM: "text-primary",
-  LOW: "text-gray-400",
+  MEDIUM: "text-yellow-400",
+  LOW: "text-primary",
   NONE: "text-success",
 };
 
 const BAR_COLORS: Record<string, string> = {
   CRITICAL: "bg-danger",
   HIGH: "bg-warning",
-  MEDIUM: "bg-primary",
-  LOW: "bg-gray-500",
+  MEDIUM: "bg-yellow-400",
+  LOW: "bg-primary",
 };
 
 export function DashboardPage() {
@@ -28,23 +28,51 @@ export function DashboardPage() {
     });
   }, []);
 
+  const handleExecApprovalRequested = useCallback((_entry: ExecApprovalEntry) => {
+    setStats((prev: DashboardStats | null) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        execApprovalTotal: prev.execApprovalTotal + 1,
+        execApprovalPending: prev.execApprovalPending + 1,
+      };
+    });
+  }, []);
+
+  const handleExecApprovalResolved = useCallback((entry: ExecApprovalEntry) => {
+    setStats((prev: DashboardStats | null) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        execApprovalPending: Math.max(0, prev.execApprovalPending - 1),
+        execApprovalBlocked:
+          entry.decision === "deny"
+            ? prev.execApprovalBlocked + 1
+            : prev.execApprovalBlocked,
+        execApprovalAllowed:
+          entry.decision === "allow-once" || entry.decision === "allow-always"
+            ? prev.execApprovalAllowed + 1
+            : prev.execApprovalAllowed,
+      };
+    });
+  }, []);
+
   useEffect(() => {
     socket.emit("safeclaw:getStats");
     socket.emit("safeclaw:getOpenclawActivities", { limit: 10 });
 
     socket.on("safeclaw:stats", setStats);
     socket.on("safeclaw:openclawActivity", handleActivity);
+    socket.on("safeclaw:execApprovalRequested", handleExecApprovalRequested);
+    socket.on("safeclaw:execApprovalResolved", handleExecApprovalResolved);
 
     return () => {
       socket.off("safeclaw:stats", setStats);
       socket.off("safeclaw:openclawActivity", handleActivity);
+      socket.off("safeclaw:execApprovalRequested", handleExecApprovalRequested);
+      socket.off("safeclaw:execApprovalResolved", handleExecApprovalResolved);
     };
-  }, [handleActivity]);
-
-  const pendingCount =
-    stats && stats.totalCommands > 0
-      ? stats.totalCommands - stats.blockedCommands - stats.allowedCommands
-      : 0;
+  }, [handleActivity, handleExecApprovalRequested, handleExecApprovalResolved]);
 
   return (
     <div>
@@ -53,20 +81,20 @@ export function DashboardPage() {
         <>
           {/* Row 1: Command Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <StatCard label="Total Commands" value={stats.totalCommands} />
+            <StatCard label="Total Commands" value={stats.execApprovalTotal} />
             <StatCard
               label="Blocked"
-              value={stats.blockedCommands}
+              value={stats.execApprovalBlocked}
               color="text-danger"
             />
             <StatCard
               label="Allowed"
-              value={stats.allowedCommands}
+              value={stats.execApprovalAllowed}
               color="text-success"
             />
             <StatCard
               label="Pending"
-              value={pendingCount}
+              value={stats.execApprovalPending}
               color="text-warning"
             />
           </div>
@@ -168,7 +196,7 @@ export function DashboardPage() {
                   AI agent runs.
                 </p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[280px] overflow-y-auto pr-2">
                   {recentActivities.map((activity) => (
                     <div
                       key={activity.id}

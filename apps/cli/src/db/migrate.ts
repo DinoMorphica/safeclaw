@@ -110,6 +110,34 @@ export function pushSchema(): void {
     "CREATE INDEX IF NOT EXISTS idx_agent_activities_run_id ON agent_activities(run_id)",
   );
 
+  // --- v0.3.0 migration: restricted_patterns and exec_approvals tables ---
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS restricted_patterns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pattern TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS exec_approvals (
+      id TEXT PRIMARY KEY,
+      command TEXT NOT NULL,
+      cwd TEXT NOT NULL,
+      security TEXT NOT NULL,
+      session_key TEXT NOT NULL,
+      requested_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      decision TEXT,
+      decided_by TEXT,
+      decided_at TEXT,
+      matched_pattern TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_exec_approvals_decision
+      ON exec_approvals(decision);
+    CREATE INDEX IF NOT EXISTS idx_exec_approvals_decided_at
+      ON exec_approvals(decided_at);
+  `);
+
   // Seed default access config if table is empty
   const count = sqlite
     .prepare("SELECT COUNT(*) as cnt FROM access_config")

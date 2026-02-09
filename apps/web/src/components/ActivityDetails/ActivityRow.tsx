@@ -13,7 +13,7 @@ const THREAT_TEXT_COLORS: Record<ThreatLevel, string> = {
 const THREAT_COLORS: Record<ThreatLevel, string> = {
   CRITICAL: "bg-red-500",
   HIGH: "bg-orange-500",
-  MEDIUM: "bg-yellow-500",
+  MEDIUM: "bg-yellow-400",
   LOW: "bg-blue-500",
   NONE: "bg-gray-500",
 };
