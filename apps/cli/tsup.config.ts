@@ -1,4 +1,5 @@
 import { defineConfig } from "tsup";
+import pkg from "./package.json" with { type: "json" };
 
 export default defineConfig({
   entry: ["src/main.ts"],
@@ -7,6 +8,9 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   sourcemap: true,
+  define: {
+    "process.env.SAFECLAW_VERSION": JSON.stringify(pkg.version),
+  },
   noExternal: ["@safeclaw/shared"],
   external: [
     "@fastify/cors",
