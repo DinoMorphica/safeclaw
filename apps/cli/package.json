@@ -1,6 +1,6 @@
 {
   "name": "safeclaw",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Security management dashboard for AI agents – intercept, monitor, and control what AI agents can do on your system",
   "type": "module",
   "license": "AGPL-3.0-only",

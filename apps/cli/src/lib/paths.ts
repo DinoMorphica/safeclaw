@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
@@ -18,5 +19,9 @@ export const OPENCLAW_EXEC_APPROVALS_PATH = path.join(OPENCLAW_DIR, "exec-approv
 
 export function getPublicDir(): string {
   const currentDir = path.dirname(new URL(import.meta.url).pathname);
-  return path.resolve(currentDir, "..", "..", "public");
+  // In bundled output (dist/main.js), public/ is at ../public
+  // In dev mode (src/lib/paths.ts), public/ is at ../../public
+  const bundledPath = path.resolve(currentDir, "..", "public");
+  const devPath = path.resolve(currentDir, "..", "..", "public");
+  return fs.existsSync(bundledPath) ? bundledPath : devPath;
 }
