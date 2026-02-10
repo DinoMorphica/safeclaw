@@ -22,7 +22,12 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
 export function Sidebar() {
   return (
     <aside className="flex h-screen w-64 flex-col bg-sidebar border-r border-gray-800">
-      <div className="flex h-14 items-center justify-between px-6 border-b border-gray-800">
+      <div className="flex h-14 items-center gap-3 px-6 border-b border-gray-800">
+        <img
+          src="/safeclaw_icon.png"
+          alt="SafeClaw"
+          className="h-8 w-8 object-contain"
+        />
         <div className="flex items-center gap-2">
           <span className="text-xl font-bold">
             <span className="text-white">Safe</span>
@@ -30,11 +35,6 @@ export function Sidebar() {
           </span>
           <span className="text-xs text-gray-500">v0.1.0</span>
         </div>
-        <img
-          src="/safeclaw_icon.png"
-          alt="SafeClaw"
-          className="h-8 w-8 object-contain"
-        />
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">
