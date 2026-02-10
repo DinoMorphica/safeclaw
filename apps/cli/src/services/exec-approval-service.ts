@@ -1,9 +1,11 @@
 import { eq, desc, sql } from "drizzle-orm";
+import path from "node:path";
 import { logger } from "../lib/logger.js";
 import { getDb, schema } from "../db/index.js";
 import type {
   OpenClawClient,
   ExecApprovalRequest,
+  OpenClawAllowlistEntry,
 } from "../lib/openclaw-client.js";
 import type { TypedSocketServer } from "../server/socket.js";
 import type {
@@ -26,7 +28,7 @@ let instance: ExecApprovalService | null = null;
  * Simple glob-to-regex matching.
  * Converts patterns like "sudo *", "rm -rf *", "python*" to regex tests.
  */
-function matchesPattern(command: string, pattern: string): boolean {
+export function matchesPattern(command: string, pattern: string): boolean {
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
   const regexStr = "^" + escaped.replace(/\*/g, ".*") + "$";
   return new RegExp(regexStr, "i").test(command);
@@ -287,6 +289,14 @@ export class ExecApprovalService {
         logger.error({ err, pattern: trimmed }, "Failed to persist restricted pattern");
       }
 
+      // Sync: remove matching entries from OpenClaw's allowlist
+      this.syncRemoveFromOpenClawAllowlist(trimmed).catch((err) => {
+        logger.error(
+          { err, pattern: trimmed },
+          "Failed to sync pattern to OpenClaw allowlist",
+        );
+      });
+
       logger.info({ pattern: trimmed }, "Added restricted command pattern");
     }
     this.broadcastPatterns();
@@ -311,6 +321,122 @@ export class ExecApprovalService {
     logger.info({ pattern }, "Removed restricted command pattern");
     this.broadcastPatterns();
     return [...this.restrictedPatterns];
+  }
+
+  // --- OpenClaw allowlist sync ---
+
+  /**
+   * Determine if an OpenClaw allowlist entry matches a SafeClaw restricted pattern.
+   *
+   * Matching strategy:
+   * 1. Extract the binary name from the SafeClaw pattern's first token
+   *    and compare against the basename of the allowlist entry's path.
+   * 2. Check entry.lastUsedCommand against the full glob pattern.
+   * 3. Check the entry.pattern itself against the full glob pattern.
+   */
+  private allowlistEntryMatchesRestriction(
+    entry: OpenClawAllowlistEntry,
+    restrictedPattern: string,
+  ): boolean {
+    // Strategy 1: basename comparison
+    const firstToken = restrictedPattern.split(/\s+/)[0].replace(/\*+$/, "");
+    if (firstToken) {
+      const entryBasename = path.basename(entry.pattern);
+      if (
+        entryBasename === firstToken ||
+        entryBasename.startsWith(firstToken)
+      ) {
+        return true;
+      }
+      if (entry.lastResolvedPath) {
+        const resolvedBasename = path.basename(entry.lastResolvedPath);
+        if (
+          resolvedBasename === firstToken ||
+          resolvedBasename.startsWith(firstToken)
+        ) {
+          return true;
+        }
+      }
+    }
+
+    // Strategy 2: match lastUsedCommand against the full glob
+    if (
+      entry.lastUsedCommand &&
+      matchesPattern(entry.lastUsedCommand, restrictedPattern)
+    ) {
+      return true;
+    }
+
+    // Strategy 3: match the entry pattern path against the glob
+    if (matchesPattern(entry.pattern, restrictedPattern)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Remove entries from OpenClaw's exec-approvals allowlist that match
+   * the given restricted pattern. Uses optimistic locking via the gateway.
+   */
+  private async syncRemoveFromOpenClawAllowlist(
+    pattern: string,
+    maxRetries = 2,
+  ): Promise<void> {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await this.client.getExecApprovals();
+        if (!result) {
+          logger.warn("Could not read OpenClaw exec approvals for sync");
+          return;
+        }
+
+        const { file, hash } = result;
+        let modified = false;
+
+        if (file.agents) {
+          for (const agentKey of Object.keys(file.agents)) {
+            const agent = file.agents[agentKey];
+            if (!agent.allowlist || agent.allowlist.length === 0) continue;
+
+            const before = agent.allowlist.length;
+            agent.allowlist = agent.allowlist.filter(
+              (entry) =>
+                !this.allowlistEntryMatchesRestriction(entry, pattern),
+            );
+            const removed = before - agent.allowlist.length;
+
+            if (removed > 0) {
+              modified = true;
+              logger.info(
+                { agentKey, pattern, removed },
+                "Filtered OpenClaw allowlist entries matching new restriction",
+              );
+            }
+          }
+        }
+
+        if (!modified) return;
+
+        const success = await this.client.setExecApprovals(file, hash);
+        if (success) return;
+
+        // Optimistic lock failed — retry
+        if (attempt < maxRetries) {
+          logger.warn(
+            { attempt, pattern },
+            "Optimistic lock conflict, retrying sync",
+          );
+        }
+      } catch (err) {
+        logger.error({ err, pattern, attempt }, "Sync attempt failed");
+        if (attempt >= maxRetries) return;
+      }
+    }
+    logger.error(
+      { pattern },
+      "Exhausted retries for OpenClaw allowlist sync",
+    );
   }
 
   broadcastPatterns(): void {

@@ -2,6 +2,7 @@ import type {
   AccessCategory,
   AccessControlState,
   AccessToggleState,
+  McpServerState,
   OpenClawConfig,
 } from "@safeclaw/shared";
 import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.js";
@@ -14,6 +15,26 @@ const TOOL_GROUP_MAP: Record<string, string> = {
   system_commands: "group:runtime",
   network: "group:web",
 };
+
+/**
+ * Derive per-server MCP states from plugin entries and tools.deny list.
+ */
+function deriveMcpServerStates(
+  config: OpenClawConfig,
+  denyList: string[],
+): McpServerState[] {
+  const pluginEntries = config.plugins?.entries ?? {};
+  return Object.keys(pluginEntries).map((name) => {
+    const pluginEnabled = pluginEntries[name].enabled !== false;
+    const toolsDenyBlocked = denyList.includes(`mcp__${name}`);
+    return {
+      name,
+      pluginEnabled,
+      toolsDenyBlocked,
+      effectivelyEnabled: pluginEnabled && !toolsDenyBlocked,
+    };
+  });
+}
 
 /**
  * Read the OpenClaw config and derive the current access control toggle states.
@@ -29,6 +50,7 @@ export function deriveAccessState(): AccessControlState {
         { category: "network", enabled: true },
         { category: "system_commands", enabled: true },
       ],
+      mcpServers: [],
       openclawConfigAvailable: false,
     };
   }
@@ -54,17 +76,19 @@ export function deriveAccessState(): AccessControlState {
     { category: "system_commands", enabled: systemCommandsEnabled },
   ];
 
-  return { toggles, openclawConfigAvailable: true };
+  const mcpServers = deriveMcpServerStates(config, denyList);
+
+  return { toggles, mcpServers, openclawConfigAvailable: true };
 }
 
 /**
  * Apply an access toggle change: write to OpenClaw config and update audit DB.
- * Returns the new toggle states.
+ * Returns the full access control state.
  */
 export async function applyAccessToggle(
   category: AccessCategory,
   enabled: boolean,
-): Promise<AccessToggleState[]> {
+): Promise<AccessControlState> {
   const config = readOpenClawConfig();
   if (!config) {
     throw new Error("OpenClaw config not found");
@@ -80,8 +104,37 @@ export async function applyAccessToggle(
 
   await updateAuditDb(category, enabled);
 
-  const newState = deriveAccessState();
-  return newState.toggles;
+  return deriveAccessState();
+}
+
+/**
+ * Toggle an individual MCP server by adding/removing mcp__<name> from tools.deny.
+ */
+export async function applyMcpServerToggle(
+  serverName: string,
+  enabled: boolean,
+): Promise<AccessControlState> {
+  const config = readOpenClawConfig();
+  if (!config) {
+    throw new Error("OpenClaw config not found");
+  }
+
+  const denyPattern = `mcp__${serverName}`;
+  const currentDeny = [...(config.tools?.deny ?? [])];
+
+  if (enabled) {
+    const filtered = currentDeny.filter((entry) => entry !== denyPattern);
+    writeOpenClawConfig({ tools: { deny: filtered } });
+  } else {
+    if (!currentDeny.includes(denyPattern)) {
+      currentDeny.push(denyPattern);
+    }
+    writeOpenClawConfig({ tools: { deny: currentDeny } });
+  }
+
+  await updateAuditDb(`mcp_server:${serverName}`, enabled);
+
+  return deriveAccessState();
 }
 
 /**
@@ -133,7 +186,7 @@ function applyNetworkToggle(config: OpenClawConfig, enabled: boolean): void {
 }
 
 /**
- * Toggle MCP servers: disable/enable all plugins.
+ * Toggle MCP servers: disable/enable all plugins and sync tools.deny.
  * Saves previous states before disabling so they can be restored.
  */
 async function applyMcpToggle(
@@ -144,6 +197,8 @@ async function applyMcpToggle(
   const pluginNames = Object.keys(pluginEntries);
 
   if (pluginNames.length === 0) return;
+
+  const currentDeny = [...(config.tools?.deny ?? [])];
 
   if (!enabled) {
     // Save current plugin states before disabling
@@ -158,7 +213,19 @@ async function applyMcpToggle(
     for (const name of pluginNames) {
       disabledEntries[name] = { enabled: false };
     }
-    writeOpenClawConfig({ plugins: { entries: disabledEntries } });
+
+    // Also add mcp__<name> to tools.deny for each plugin
+    for (const name of pluginNames) {
+      const denyPattern = `mcp__${name}`;
+      if (!currentDeny.includes(denyPattern)) {
+        currentDeny.push(denyPattern);
+      }
+    }
+
+    writeOpenClawConfig({
+      plugins: { entries: disabledEntries },
+      tools: { deny: currentDeny },
+    });
   } else {
     // Restore previous plugin states
     const previousState = await loadPreviousPluginState();
@@ -169,7 +236,17 @@ async function applyMcpToggle(
         enabled: previousState?.[name] ?? true,
       };
     }
-    writeOpenClawConfig({ plugins: { entries: restoredEntries } });
+
+    // Remove mcp__<name> entries from tools.deny for all plugins
+    const mcpDenyPatterns = new Set(pluginNames.map((n) => `mcp__${n}`));
+    const filteredDeny = currentDeny.filter(
+      (entry) => !mcpDenyPatterns.has(entry),
+    );
+
+    writeOpenClawConfig({
+      plugins: { entries: restoredEntries },
+      tools: { deny: filteredDeny },
+    });
   }
 }
 

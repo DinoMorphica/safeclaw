@@ -411,7 +411,7 @@ These are not yet implemented but are needed for a complete MVP:
 
 - **Threat engine → enforcement disconnect**: The threat analysis engine (`interceptor.ts`) classifies commands by threat level but has no connection to the exec approval enforcement layer. High-threat commands are only flagged in the UI, not automatically restricted. Consider wiring threat classifications into the restricted patterns system.
 - **Access control → exec approval disconnect**: The access control toggles (System Commands, etc.) modify OpenClaw's `tools.deny` config but do not interact with the exec approval system. These are two parallel enforcement mechanisms with no coordination between them.
-- **Test suite**: Zero tests exist. No test runner is configured.
+- **Test suite**: Vitest is configured for `apps/cli` with 46 tests covering `ExecApprovalService` (pattern matching, auto-approve, manual approval, unrestrict, re-restrict with OpenClaw sync, timeout, stats, concurrency). No tests exist yet for the frontend, API routes, or other backend services.
 - **SafeClaw session lifecycle**: SafeClaw sessions are not automatically created/ended.
 - **Error boundaries**: No React error boundaries or fallback UI.
 - **Export functionality**: No CSV/JSON export for audit logs.
@@ -437,6 +437,7 @@ pnpm build:cli                  # Build backend only
 
 # Verify
 pnpm typecheck                  # Type-check all packages
+pnpm test                       # Run test suite (exec approval service)
 
 # Clean
 pnpm clean                      # Remove all dist/ and public/

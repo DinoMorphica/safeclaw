@@ -13,7 +13,9 @@
     "dev": "tsx watch src/main.ts start",
     "typecheck": "tsc --noEmit",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
@@ -34,7 +36,8 @@
     "@types/ws": "^8.18.1",
     "drizzle-kit": "^0.30.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
   },
   "files": [
     "dist",

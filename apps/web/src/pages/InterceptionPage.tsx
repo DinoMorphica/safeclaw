@@ -8,14 +8,14 @@ import type {
 
 const DECISION_COLORS: Record<string, string> = {
   "allow-once": "text-success",
-  "allow-always": "text-primary",
+  "allow-always": "text-blue-400",
   deny: "text-danger",
 };
 
 const DECISION_LABELS: Record<string, string> = {
   "allow-once": "ALLOWED",
   "allow-always": "UNRESTRICTED",
-  deny: "DENIED",
+  deny: "BLOCKED",
 };
 
 function PendingApprovalCard({
@@ -67,7 +67,7 @@ function PendingApprovalCard({
           <button
             type="button"
             onClick={() => onDecision(entry.id, "allow-always")}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
           >
             Unrestrict
           </button>

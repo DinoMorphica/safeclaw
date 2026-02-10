@@ -126,6 +126,13 @@ export const accessToggleStateSchema = z.object({
   enabled: z.boolean(),
 });
 
+export const mcpServerStateSchema = z.object({
+  name: z.string(),
+  pluginEnabled: z.boolean(),
+  toolsDenyBlocked: z.boolean(),
+  effectivelyEnabled: z.boolean(),
+});
+
 export const openClawSandboxDockerConfigSchema = z.object({
   binds: z.array(z.string()).optional(),
   network: z.string().optional(),

@@ -190,6 +190,10 @@ export interface ClientToServerEvents {
   "safeclaw:getAllowlist": () => void;
   "safeclaw:addAllowlistPattern": (payload: { pattern: string }) => void;
   "safeclaw:removeAllowlistPattern": (payload: { pattern: string }) => void;
+  "safeclaw:toggleMcpServer": (payload: {
+    serverName: string;
+    enabled: boolean;
+  }) => void;
 }
 
 export interface DashboardStats {
@@ -257,8 +261,16 @@ export interface AccessToggleState {
   enabled: boolean;
 }
 
+export interface McpServerState {
+  name: string;
+  pluginEnabled: boolean;
+  toolsDenyBlocked: boolean;
+  effectivelyEnabled: boolean;
+}
+
 export interface AccessControlState {
   toggles: AccessToggleState[];
+  mcpServers: McpServerState[];
   openclawConfigAvailable: boolean;
 }
 

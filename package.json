@@ -9,7 +9,8 @@
     "dev:web": "pnpm --filter @safeclaw/web dev",
     "dev:cli": "pnpm --filter safeclaw dev",
     "clean": "pnpm -r exec rm -rf dist && rm -rf apps/cli/public/*",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter safeclaw test"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

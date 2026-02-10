@@ -4,7 +4,7 @@ import { desc, eq, and, sql } from "drizzle-orm";
 import { readConfig, writeConfig } from "../lib/config.js";
 import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.js";
 import { getOpenClawMonitor } from "../services/openclaw-monitor.js";
-import { deriveAccessState, applyAccessToggle } from "../services/access-control.js";
+import { deriveAccessState, applyAccessToggle, applyMcpServerToggle } from "../services/access-control.js";
 import type { OpenClawConfig, ThreatLevel, ExecDecision } from "@safeclaw/shared";
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -48,11 +48,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       enabled: boolean;
     };
     try {
-      const toggles = await applyAccessToggle(
+      return await applyAccessToggle(
         category as "filesystem" | "mcp_servers" | "network" | "system_commands",
         enabled,
       );
-      return { toggles, openclawConfigAvailable: true };
     } catch {
       // Fallback: just update DB if OpenClaw config is unavailable
       const db = getDb();
@@ -68,6 +67,18 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
             eq(schema.accessConfig.key, "enabled"),
           ),
         );
+      return deriveAccessState();
+    }
+  });
+
+  app.put("/api/config/access/mcp-server", async (request) => {
+    const { serverName, enabled } = request.body as {
+      serverName: string;
+      enabled: boolean;
+    };
+    try {
+      return await applyMcpServerToggle(serverName, enabled);
+    } catch {
       return deriveAccessState();
     }
   });

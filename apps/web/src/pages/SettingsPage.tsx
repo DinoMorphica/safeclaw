@@ -103,7 +103,7 @@ export function SettingsPage() {
                   type="button"
                   onClick={toggleAutoOpen}
                   className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors cursor-pointer ${
-                    config.autoOpenBrowser ? "bg-primary" : "bg-gray-700"
+                    config.autoOpenBrowser ? "bg-success" : "bg-gray-700"
                   }`}
                 >
                   <div

@@ -18,7 +18,7 @@ const CATEGORY_META: Record<
   mcp_servers: {
     title: "MCP Servers (Plugins)",
     description:
-      "Master toggle for all OpenClaw plugins. Per-plugin control is available on the OpenClaw Config page.",
+      "Master toggle for all OpenClaw plugins. Expand below to manage individual servers.",
   },
   network: {
     title: "Network Access",
@@ -42,6 +42,8 @@ const CATEGORY_ORDER = [
 export function AccessControlPage() {
   const [state, setState] = useState<AccessControlState | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [togglingServer, setTogglingServer] = useState<string | null>(null);
+  const [mcpExpanded, setMcpExpanded] = useState(true);
   const [openclawConfig, setOpenclawConfig] = useState<OpenClawConfig | null>(
     null,
   );
@@ -66,6 +68,7 @@ export function AccessControlPage() {
     const accessHandler = (data: AccessControlState) => {
       setState(data);
       setToggling(null);
+      setTogglingServer(null);
     };
 
     const configHandler = (data: OpenClawConfig | null) => {
@@ -92,6 +95,14 @@ export function AccessControlPage() {
     setToggling(category);
     socket.emit("safeclaw:toggleAccess", {
       category,
+      enabled: !currentEnabled,
+    });
+  };
+
+  const handleServerToggle = (serverName: string, currentEnabled: boolean) => {
+    setTogglingServer(serverName);
+    socket.emit("safeclaw:toggleMcpServer", {
+      serverName,
       enabled: !currentEnabled,
     });
   };
@@ -210,7 +221,7 @@ export function AccessControlPage() {
                     onClick={() => handleToggle(category, isEnabled)}
                     disabled={isToggling}
                     className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors cursor-pointer disabled:opacity-50 ${
-                      isEnabled ? "bg-primary" : "bg-gray-700"
+                      isEnabled ? "bg-success" : "bg-gray-700"
                     }`}
                   >
                     <div
@@ -220,6 +231,101 @@ export function AccessControlPage() {
                     />
                   </button>
                 </div>
+
+                {/* Per-server MCP controls */}
+                {category === "mcp_servers" && state.mcpServers.length > 0 && (
+                  <div className="mt-5 pt-5 border-t border-gray-800">
+                    <button
+                      type="button"
+                      onClick={() => setMcpExpanded(!mcpExpanded)}
+                      className="flex items-center gap-2 text-xs font-medium text-gray-400 uppercase tracking-wider mb-3 cursor-pointer hover:text-gray-300"
+                    >
+                      <span
+                        className={`inline-block transition-transform ${mcpExpanded ? "rotate-90" : ""}`}
+                      >
+                        &#9654;
+                      </span>
+                      Individual Servers ({state.mcpServers.length})
+                    </button>
+
+                    {mcpExpanded && (
+                      <div className="space-y-2">
+                        {state.mcpServers.map((server) => {
+                          const isServerToggling =
+                            togglingServer === server.name;
+                          const masterDisabled = !isEnabled;
+
+                          return (
+                            <div
+                              key={server.name}
+                              className={`flex items-center justify-between py-2 px-3 rounded-lg border border-gray-800 ${
+                                masterDisabled
+                                  ? "opacity-50"
+                                  : "bg-gray-800/30"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0 mr-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-200 truncate">
+                                    {server.name}
+                                  </span>
+                                  {!server.pluginEnabled && (
+                                    <span className="px-1.5 py-0.5 text-xs rounded bg-gray-700 text-gray-400">
+                                      plugin disabled
+                                    </span>
+                                  )}
+                                  {server.toolsDenyBlocked && (
+                                    <span className="px-1.5 py-0.5 text-xs rounded bg-red-900/50 text-red-400">
+                                      tools blocked
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-600 mt-0.5">
+                                  {server.effectivelyEnabled
+                                    ? "Server active, tools accessible"
+                                    : server.toolsDenyBlocked
+                                      ? `Blocked via tools.deny (mcp__${server.name})`
+                                      : "Plugin connection disabled"}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleServerToggle(
+                                    server.name,
+                                    server.effectivelyEnabled,
+                                  )
+                                }
+                                disabled={isServerToggling || masterDisabled}
+                                className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors cursor-pointer disabled:opacity-50 ${
+                                  server.effectivelyEnabled
+                                    ? "bg-success"
+                                    : "bg-gray-700"
+                                }`}
+                              >
+                                <div
+                                  className={`w-5 h-5 rounded-full bg-white transition-transform ${
+                                    server.effectivelyEnabled
+                                      ? "translate-x-5"
+                                      : "translate-x-0"
+                                  }`}
+                                />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {category === "mcp_servers" && state.mcpServers.length === 0 && (
+                  <div className="mt-5 pt-5 border-t border-gray-800">
+                    <p className="text-sm text-gray-500">
+                      No MCP servers configured in OpenClaw.
+                    </p>
+                  </div>
+                )}
 
                 {/* Filesystem-specific: workspace path + access level */}
                 {category === "filesystem" && openclawConfig && (

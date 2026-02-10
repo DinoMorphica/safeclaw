@@ -270,14 +270,14 @@ function SessionCard({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500">
-            {session.activityCount} activities
-          </span>
           {highRisk > 0 && (
             <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-red-900/40 text-red-400 border border-red-800/50">
               {highRisk} high risk
             </span>
           )}
+          <span className="text-xs text-gray-500">
+            {session.activityCount} activities
+          </span>
           <span className="text-xs text-gray-500">
             {new Date(session.startedAt).toLocaleString()}
           </span>

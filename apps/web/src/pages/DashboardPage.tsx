@@ -6,7 +6,7 @@ const THREAT_COLORS: Record<string, string> = {
   CRITICAL: "text-danger",
   HIGH: "text-warning",
   MEDIUM: "text-yellow-400",
-  LOW: "text-primary",
+  LOW: "text-blue-400",
   NONE: "text-success",
 };
 
@@ -14,7 +14,7 @@ const BAR_COLORS: Record<string, string> = {
   CRITICAL: "bg-danger",
   HIGH: "bg-warning",
   MEDIUM: "bg-yellow-400",
-  LOW: "bg-primary",
+  LOW: "bg-blue-400",
 };
 
 export function DashboardPage() {
@@ -104,17 +104,17 @@ export function DashboardPage() {
             <StatCard
               label="Agent Activities"
               value={stats.openclawActivities ?? 0}
-              color="text-primary"
+              color="text-gray-100"
             />
             <StatCard
               label="Active Agent Sessions"
               value={stats.openclawActiveSessions ?? 0}
-              color="text-primary"
+              color="text-gray-100"
             />
             {/* Threat Detection Rate */}
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
               <p className="text-sm text-gray-400">Threat Detection Rate</p>
-              <p className="text-3xl font-bold mt-1 text-primary">
+              <p className="text-3xl font-bold mt-1 text-gray-100">
                 {stats.threatDetectionRate?.activitiesWithThreats ?? 0}
                 <span className="text-lg text-gray-500">
                   {" "}

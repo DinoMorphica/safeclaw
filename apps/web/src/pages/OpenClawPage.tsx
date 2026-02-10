@@ -326,7 +326,7 @@ export function OpenClawPage() {
                 type="button"
                 onClick={() => setSelfChatMode(!selfChatMode)}
                 className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors cursor-pointer ${
-                  selfChatMode ? "bg-primary" : "bg-gray-700"
+                  selfChatMode ? "bg-success" : "bg-gray-700"
                 }`}
               >
                 <div
@@ -418,7 +418,7 @@ export function OpenClawPage() {
                       type="button"
                       onClick={() => togglePlugin(name, isEnabled)}
                       className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors cursor-pointer ${
-                        isEnabled ? "bg-primary" : "bg-gray-700"
+                        isEnabled ? "bg-success" : "bg-gray-700"
                       }`}
                     >
                       <div

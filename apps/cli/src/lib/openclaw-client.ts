@@ -58,6 +58,32 @@ export interface ExecApprovalRequest {
   sessionKey: string;
 }
 
+export interface OpenClawAllowlistEntry {
+  id: string;
+  pattern: string;
+  lastUsedAt?: number;
+  lastUsedCommand?: string;
+  lastResolvedPath?: string;
+}
+
+export interface ExecApprovalsFile {
+  version: number;
+  defaults?: Record<string, unknown>;
+  agents?: Record<
+    string,
+    {
+      allowlist?: OpenClawAllowlistEntry[];
+      [key: string]: unknown;
+    }
+  >;
+  [key: string]: unknown;
+}
+
+export interface ExecApprovalsGetResult {
+  file: ExecApprovalsFile;
+  hash: string;
+}
+
 // --- Typed EventEmitter ---
 
 export declare interface OpenClawClient {
@@ -740,6 +766,52 @@ export class OpenClawClient extends EventEmitter {
         { err, approvalId, decision },
         "Failed to resolve exec approval",
       );
+      return false;
+    }
+  }
+
+  // --- Exec approvals file management (via gateway) ---
+
+  async getExecApprovals(): Promise<ExecApprovalsGetResult | null> {
+    try {
+      const res = await this.sendRequest("exec.approvals.get", {});
+      if (res.ok && res.payload) {
+        return {
+          file: res.payload.file as ExecApprovalsFile,
+          hash: res.payload.hash as string,
+        };
+      }
+      logger.error(
+        { error: res.error },
+        "Failed to get exec approvals from gateway",
+      );
+      return null;
+    } catch (err) {
+      logger.error({ err }, "Failed to get exec approvals from gateway");
+      return null;
+    }
+  }
+
+  async setExecApprovals(
+    file: ExecApprovalsFile,
+    baseHash: string,
+  ): Promise<boolean> {
+    try {
+      const res = await this.sendRequest("exec.approvals.set", {
+        file,
+        baseHash,
+      });
+      if (res.ok) {
+        logger.info("Successfully updated exec approvals via gateway");
+        return true;
+      }
+      logger.error(
+        { error: res.error },
+        "Failed to set exec approvals on gateway",
+      );
+      return false;
+    } catch (err) {
+      logger.error({ err }, "Failed to set exec approvals on gateway");
       return false;
     }
   }

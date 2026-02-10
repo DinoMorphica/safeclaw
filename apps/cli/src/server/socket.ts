@@ -10,7 +10,7 @@ import { logger } from "../lib/logger.js";
 import { readConfig, writeConfig } from "../lib/config.js";
 import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.js";
 import { getOpenClawMonitor } from "../services/openclaw-monitor.js";
-import { deriveAccessState, applyAccessToggle } from "../services/access-control.js";
+import { deriveAccessState, applyAccessToggle, applyMcpServerToggle } from "../services/access-control.js";
 
 export type TypedSocketServer = SocketIOServer<
   ClientToServerEvents,
@@ -182,17 +182,26 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
 
     socket.on("safeclaw:toggleAccess", async ({ category, enabled }) => {
       try {
-        const toggles = await applyAccessToggle(
+        const newState = await applyAccessToggle(
           category as "filesystem" | "mcp_servers" | "network" | "system_commands",
           enabled,
         );
         logger.info(`Access toggle: ${category} set to ${enabled}`);
-        io!.emit("safeclaw:accessControlState", {
-          toggles,
-          openclawConfigAvailable: true,
-        });
+        io!.emit("safeclaw:accessControlState", newState);
       } catch (err) {
         logger.error({ err, category, enabled }, "Failed to apply access toggle");
+        const state = deriveAccessState();
+        io!.emit("safeclaw:accessControlState", state);
+      }
+    });
+
+    socket.on("safeclaw:toggleMcpServer", async ({ serverName, enabled }) => {
+      try {
+        const newState = await applyMcpServerToggle(serverName, enabled);
+        logger.info(`MCP server toggle: ${serverName} set to ${enabled}`);
+        io!.emit("safeclaw:accessControlState", newState);
+      } catch (err) {
+        logger.error({ err, serverName, enabled }, "Failed to toggle MCP server");
         const state = deriveAccessState();
         io!.emit("safeclaw:accessControlState", state);
       }
