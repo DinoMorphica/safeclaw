@@ -2,9 +2,10 @@ import fs from "node:fs";
 import { CONFIG_PATH, SAFECLAW_DIR, LOGS_DIR } from "./paths.js";
 import { safeClawConfigSchema } from "@safeclaw/shared";
 import type { SafeClawConfig } from "@safeclaw/shared";
+import { VERSION } from "./version.js";
 
 const DEFAULT_CONFIG: SafeClawConfig = {
-  version: "0.1.0",
+  version: VERSION,
   port: 54335,
   autoOpenBrowser: true,
   premium: false,
