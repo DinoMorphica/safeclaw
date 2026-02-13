@@ -1,7 +1,46 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm build:cli:*)"
+      "Bash(pnpm build:cli:*)",
+      "WebSearch",
+      "WebFetch(domain:safeclaw.io)",
+      "Bash(wc:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:invariantlabs.ai)",
+      "WebFetch(domain:developers.openai.com)",
+      "WebFetch(domain:www.promptfoo.dev)",
+      "WebFetch(domain:owasp.org)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:openai.com)",
+      "WebFetch(domain:blog.trailofbits.com)",
+      "WebFetch(domain:www.elastic.co)",
+      "WebFetch(domain:snyk.io)",
+      "Bash(npm view:*)",
+      "WebFetch(domain:www.neowin.net)",
+      "WebFetch(domain:www.datacamp.com)",
+      "WebFetch(domain:www.macobserver.com)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:genai.owasp.org)",
+      "Bash(npx vite build)",
+      "WebFetch(domain:www.practical-devsecops.com)",
+      "WebFetch(domain:www.anthropic.com)",
+      "WebFetch(domain:www.aikido.dev)",
+      "WebFetch(domain:northflank.com)",
+      "Bash(pnpm build:shared:*)",
+      "WebFetch(domain:cheatsheetseries.owasp.org)",
+      "WebFetch(domain:pierce.dev)",
+      "WebFetch(domain:www.backslash.security)",
+      "WebFetch(domain:blog.senko.net)",
+      "WebFetch(domain:saif.google)",
+      "Bash(pnpm build:*)",
+      "WebFetch(domain:www.integrate.io)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build:web:*)",
+      "WebFetch(domain:www.akto.io)",
+      "WebFetch(domain:www.paloaltonetworks.com)"
     ]
   }
 }

@@ -1,9 +1,11 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
+  ShieldCheck,
   ShieldAlert,
   Activity,
   AlertTriangle,
+  ScanSearch,
   Lock,
   Bot,
   Settings,
@@ -12,9 +14,11 @@ import type { LucideIcon } from "lucide-react";
 
 const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/interception", label: "Command Interception", icon: ShieldAlert },
+  { to: "/security", label: "Security Setup", icon: ShieldCheck },
   { to: "/sessions", label: "Session Monitor", icon: Activity },
   { to: "/threats", label: "Threat Center", icon: AlertTriangle },
+  { to: "/interception", label: "Command Interceptor", icon: ShieldAlert },
+  { to: "/skill-scanner", label: "Skill Scanner", icon: ScanSearch },
   { to: "/access", label: "Access Control", icon: Lock },
   { to: "/openclaw", label: "OpenClaw Config", icon: Bot },
 ];

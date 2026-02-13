@@ -6,6 +6,9 @@ import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.
 import { getOpenClawMonitor } from "../services/openclaw-monitor.js";
 import { deriveAccessState, applyAccessToggle, applyMcpServerToggle } from "../services/access-control.js";
 import type { OpenClawConfig, ThreatLevel, ExecDecision } from "@safeclaw/shared";
+import { skillScanRequestSchema } from "@safeclaw/shared";
+import { scanSkillDefinition } from "../lib/skill-scanner.js";
+import { computeSecurityPosture } from "../services/security-posture.js";
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/health", async () => {
@@ -234,5 +237,22 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     if (!monitor) return { error: "Monitor not available" };
     const patterns = monitor.getExecApprovalService().removeRestrictedPattern(pattern);
     return { patterns: patterns.map((p: string) => ({ pattern: p })) };
+  });
+
+  // --- Security Posture ---
+
+  app.get("/api/security-posture", async () => {
+    return computeSecurityPosture();
+  });
+
+  // --- Skill Scanner ---
+
+  app.post("/api/skill-scanner/scan", async (request, reply) => {
+    const parsed = skillScanRequestSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "Invalid request. Provide { content: string } (1 to 500K chars)." });
+    }
+    const result = scanSkillDefinition(parsed.data.content);
+    return result;
   });
 }

@@ -375,3 +375,76 @@ export interface OpenClawConfig {
     lastTouchedAt?: string;
   };
 }
+
+// --- Skill Scanner types ---
+export type SkillScanCategoryId =
+  | "SK-HID"  // Hidden Content
+  | "SK-INJ"  // Prompt Injection
+  | "SK-EXE"  // Shell Execution
+  | "SK-EXF"  // Data Exfiltration
+  | "SK-SEC"  // Embedded Secrets
+  | "SK-SFA"  // Sensitive File Refs
+  | "SK-MEM"  // Memory/Config Poisoning
+  | "SK-SUP"  // Supply Chain Risk
+  | "SK-B64"  // Encoded Payloads
+  | "SK-IMG"  // Image Exfiltration
+  | "SK-SYS"  // System Prompt Extraction
+  | "SK-ARG"  // Argument Injection
+  | "SK-XTL"  // Cross-Tool Chaining
+  | "SK-PRM"  // Excessive Permissions
+  | "SK-STR"; // Suspicious Structure
+
+export interface SkillScanFinding {
+  categoryId: SkillScanCategoryId;
+  categoryName: string;
+  severity: ThreatLevel;
+  reason: string;
+  evidence?: string;
+  owaspRef?: string;
+  remediation?: string;
+  lineNumber?: number;
+}
+
+export interface SkillScanResult {
+  overallSeverity: ThreatLevel;
+  findings: SkillScanFinding[];
+  summary: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  scannedAt: string;
+  contentLength: number;
+  scanDurationMs: number;
+}
+
+// --- Security Posture types ---
+export type SecurityLayerStatus = "configured" | "partial" | "unconfigured" | "error";
+
+export interface SecurityCheck {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+  severity: "info" | "warning" | "critical";
+}
+
+export interface SecurityLayer {
+  id: string;
+  name: string;
+  status: SecurityLayerStatus;
+  checks: SecurityCheck[];
+  passedCount: number;
+  totalCount: number;
+}
+
+export interface SecurityPosture {
+  layers: SecurityLayer[];
+  overallScore: number;
+  configuredLayers: number;
+  partialLayers: number;
+  unconfiguredLayers: number;
+  totalLayers: number;
+  checkedAt: string;
+}

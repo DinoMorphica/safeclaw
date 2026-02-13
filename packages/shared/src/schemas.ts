@@ -235,3 +235,73 @@ export const allowlistPatternSchema = z.object({
 export const allowlistStateSchema = z.object({
   patterns: z.array(allowlistPatternSchema),
 });
+
+// --- Skill Scanner schemas ---
+
+export const skillScanCategoryIdSchema = z.enum([
+  "SK-HID", "SK-INJ", "SK-EXE", "SK-EXF", "SK-SEC",
+  "SK-SFA", "SK-MEM", "SK-SUP", "SK-B64", "SK-IMG",
+  "SK-SYS", "SK-ARG", "SK-XTL", "SK-PRM", "SK-STR",
+]);
+
+export const skillScanRequestSchema = z.object({
+  content: z.string().min(1).max(500_000),
+});
+
+export const skillScanFindingSchema = z.object({
+  categoryId: skillScanCategoryIdSchema,
+  categoryName: z.string(),
+  severity: threatLevelSchema,
+  reason: z.string(),
+  evidence: z.string().optional(),
+  owaspRef: z.string().optional(),
+  remediation: z.string().optional(),
+  lineNumber: z.number().optional(),
+});
+
+export const skillScanResultSchema = z.object({
+  overallSeverity: threatLevelSchema,
+  findings: z.array(skillScanFindingSchema),
+  summary: z.object({
+    critical: z.number(),
+    high: z.number(),
+    medium: z.number(),
+    low: z.number(),
+  }),
+  scannedAt: z.string(),
+  contentLength: z.number(),
+  scanDurationMs: z.number(),
+});
+
+// --- Security Posture schemas ---
+
+export const securityLayerStatusSchema = z.enum([
+  "configured", "partial", "unconfigured", "error",
+]);
+
+export const securityCheckSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  passed: z.boolean(),
+  detail: z.string(),
+  severity: z.enum(["info", "warning", "critical"]),
+}).passthrough();
+
+export const securityLayerSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: securityLayerStatusSchema,
+  checks: z.array(securityCheckSchema),
+  passedCount: z.number(),
+  totalCount: z.number(),
+}).passthrough();
+
+export const securityPostureSchema = z.object({
+  layers: z.array(securityLayerSchema),
+  overallScore: z.number(),
+  configuredLayers: z.number(),
+  partialLayers: z.number(),
+  unconfiguredLayers: z.number(),
+  totalLayers: z.number(),
+  checkedAt: z.string(),
+}).passthrough();
