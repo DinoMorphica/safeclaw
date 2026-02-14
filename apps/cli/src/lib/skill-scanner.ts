@@ -235,7 +235,7 @@ function scanImageExfiltration(content: string): SkillScanFinding[] {
     "SK-IMG",
     "Image Exfiltration",
     "LLM02",
-    "Remove image tags with dynamic or suspicious URLs. Markdown images can be used to exfiltrate data via query parameters or variable interpolation.",
+    "Remove image tags with dynamic, suspicious, or embedded content. Images can exfiltrate data via query parameters, inline data URIs, SVG scripts, tracking pixels, or steganographic encoding. Avoid data: URIs, SVG images with scripts, and references to steganography tools.",
   );
 }
 

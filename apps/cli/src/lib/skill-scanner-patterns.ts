@@ -121,11 +121,32 @@ export const ENCODED_PAYLOAD_PATTERNS: ScanPattern[] = [
 // --- SK-IMG: Image Exfiltration ---
 
 export const IMAGE_EXFIL_PATTERNS: ScanPattern[] = [
+  // URL-based exfiltration (original 5)
   { pattern: /!\[.*?\]\(https?:\/\/[^\s)]*(?:\?|&)(?:data|content|file|token|secret|key|password|env)=[^\s)]*\)/i, label: "Image URL with exfil query params", severity: "CRITICAL" },
   { pattern: /!\[.*?\]\(https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}[^\s)]*\)/, label: "Image from raw IP address", severity: "CRITICAL" },
   { pattern: /!\[.*?\]\([^)]*\$\{[^}]+\}[^)]*\)/, label: "Variable interpolation in image URL", severity: "CRITICAL" },
   { pattern: /!\[.*?\]\([^)]*\$\([^)]+\)[^)]*\)/, label: "Command substitution in image URL", severity: "CRITICAL" },
   { pattern: /<img[^>]+src\s*=\s*["'][^"']*\$\{[^}]+\}[^"']*["']/i, label: "Variable interpolation in img src", severity: "CRITICAL" },
+  // Group A: Data URI image payloads
+  { pattern: /!\[.*?\]\(data:image\/[^\s)]+\)/i, label: "Data URI image in markdown", severity: "CRITICAL" },
+  { pattern: /<img[^>]+src\s*=\s*["']data:image\/[^"']+["']/i, label: "Data URI image in HTML img tag", severity: "CRITICAL" },
+  { pattern: /data:image\/[^;]+;base64,[A-Za-z0-9+/]{200,}/, label: "Large base64 data URI (steganographic carrier)", severity: "CRITICAL" },
+  // Group B: SVG embedded scripts & data
+  { pattern: /<svg[\s>][\s\S]*?<script[\s>]/i, label: "SVG with embedded script tag", severity: "CRITICAL" },
+  { pattern: /<svg[\s>][\s\S]*?\bon(?:load|error|click|mouseover)\s*=/i, label: "SVG with event handler", severity: "CRITICAL" },
+  { pattern: /<svg[\s>][\s\S]*?<foreignObject[\s>]/i, label: "SVG with foreignObject (arbitrary HTML embed)", severity: "HIGH" },
+  { pattern: /data:image\/svg\+xml[^"'\s)]+/i, label: "SVG data URI (inline payload + script risk)", severity: "CRITICAL" },
+  // Group C: Web beacons / tracking pixels
+  { pattern: /<img[^>]+(?:width\s*=\s*["']?1["']?[^>]+height\s*=\s*["']?1["']?|height\s*=\s*["']?1["']?[^>]+width\s*=\s*["']?1["']?)/i, label: "1x1 tracking pixel (web beacon)", severity: "HIGH" },
+  { pattern: /<img[^>]+style\s*=\s*["'][^"']*(?:display\s*:\s*none|visibility\s*:\s*hidden|opacity\s*:\s*0|width\s*:\s*0|height\s*:\s*0)/i, label: "CSS-hidden image beacon", severity: "HIGH" },
+  // Group D: Steganography tool references
+  { pattern: /\b(?:steghide|stegano|openstego|zsteg|stegsolve|stegdetect|steganograph(?:y|ic)?|outguess|pixelknot|deepsteg|stegpy)\b/i, label: "Steganography tool/library reference", severity: "HIGH" },
+  // Group E: Canvas pixel manipulation
+  { pattern: /\b(?:getImageData|putImageData|createImageData|toDataURL|drawImage)\s*\(/i, label: "Canvas API pixel manipulation", severity: "HIGH" },
+  // Group F: Double extension disguise
+  { pattern: /\.(?:png|jpe?g|gif|bmp|webp|svg|ico|tiff?)\.(?:exe|sh|bat|cmd|ps1|py|rb|pl|js|vbs|com|scr|msi)\b/i, label: "Double file extension (executable disguised as image)", severity: "CRITICAL" },
+  // Group G: Obfuscated image URLs
+  { pattern: /!\[.*?\]\([^)]*(?:%[0-9a-fA-F]{2}){5,}[^)]*\)/, label: "Excessive URL encoding in image URL", severity: "MEDIUM" },
 ];
 
 // --- SK-SYS: System Prompt Extraction ---
