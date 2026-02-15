@@ -40,7 +40,10 @@
       "Bash(pnpm test:*)",
       "Bash(pnpm build:web:*)",
       "WebFetch(domain:www.akto.io)",
-      "WebFetch(domain:www.paloaltonetworks.com)"
+      "WebFetch(domain:www.paloaltonetworks.com)",
+      "Bash(python3:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(srt --version:*)"
     ]
   }
 }
