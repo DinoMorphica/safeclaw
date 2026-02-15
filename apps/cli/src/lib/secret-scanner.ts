@@ -5,7 +5,7 @@ export interface SecretMatch {
   severity: ThreatLevel;
 }
 
-const SECRET_PATTERNS: { pattern: RegExp; type: string; severity: ThreatLevel }[] = [
+export const SECRET_PATTERNS: { pattern: RegExp; type: string; severity: ThreatLevel }[] = [
   // AWS
   { pattern: /AKIA[0-9A-Z]{16}/, type: "AWS_ACCESS_KEY", severity: "CRITICAL" },
   { pattern: /(?:aws_secret_access_key|AWS_SECRET_ACCESS_KEY)\s*[=:]\s*\S{20,}/, type: "AWS_SECRET_KEY", severity: "CRITICAL" },

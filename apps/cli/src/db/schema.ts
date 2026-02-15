@@ -113,7 +113,7 @@ export const execApprovals = sqliteTable("exec_approvals", {
     enum: ["allow-once", "allow-always", "deny"],
   }),
   decidedBy: text("decided_by", {
-    enum: ["user", "auto-deny"],
+    enum: ["user", "auto-deny", "auto-approve", "access-control"],
   }),
   decidedAt: text("decided_at"),
   matchedPattern: text("matched_pattern"),

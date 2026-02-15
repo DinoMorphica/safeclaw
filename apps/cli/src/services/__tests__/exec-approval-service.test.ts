@@ -30,9 +30,16 @@ vi.mock("../../lib/logger.js", () => ({
   },
 }));
 
+const mockDeriveAccessState = vi.fn();
+vi.mock("../access-control.js", () => ({
+  get deriveAccessState() {
+    return mockDeriveAccessState;
+  },
+}));
+
 // --- Import module under test AFTER mocks are set up ---
 
-const { ExecApprovalService, matchesPattern } = await import(
+const { ExecApprovalService, matchesPattern, isNetworkCommand } = await import(
   "../exec-approval-service.js"
 );
 
@@ -46,6 +53,17 @@ describe("ExecApprovalService", () => {
     testDb = createTestDb();
     client = createMockClient();
     io = createMockIO();
+    // Default: network toggle ON (no interference)
+    mockDeriveAccessState.mockReturnValue({
+      toggles: [
+        { category: "filesystem", enabled: true },
+        { category: "mcp_servers", enabled: true },
+        { category: "network", enabled: true },
+        { category: "system_commands", enabled: false },
+      ],
+      mcpServers: [],
+      openclawConfigAvailable: true,
+    });
     service = new ExecApprovalService(client, io);
   });
 
@@ -725,6 +743,167 @@ describe("ExecApprovalService", () => {
       expect(service.getPendingApprovals()).toHaveLength(2);
       service.destroy();
       expect(service.getPendingApprovals()).toHaveLength(0);
+    });
+  });
+
+  // =============================================
+  // 11. isNetworkCommand helper
+  // =============================================
+  describe("isNetworkCommand", () => {
+    it("should detect common network commands", () => {
+      expect(isNetworkCommand("curl https://example.com")).toBe(true);
+      expect(isNetworkCommand("wget https://example.com/file.tar.gz")).toBe(true);
+      expect(isNetworkCommand("ssh user@host")).toBe(true);
+      expect(isNetworkCommand("scp file.txt user@host:/tmp")).toBe(true);
+      expect(isNetworkCommand("ping 8.8.8.8")).toBe(true);
+      expect(isNetworkCommand("nmap -sS 192.168.1.0/24")).toBe(true);
+    });
+
+    it("should detect full-path network commands", () => {
+      expect(isNetworkCommand("/usr/bin/curl https://example.com")).toBe(true);
+      expect(isNetworkCommand("/usr/local/bin/wget file")).toBe(true);
+    });
+
+    it("should not detect non-network commands", () => {
+      expect(isNetworkCommand("echo hello")).toBe(false);
+      expect(isNetworkCommand("ls -la")).toBe(false);
+      expect(isNetworkCommand("cat /etc/hosts")).toBe(false);
+      expect(isNetworkCommand("python3 script.py")).toBe(false);
+    });
+
+    it("should handle empty/whitespace input", () => {
+      expect(isNetworkCommand("")).toBe(false);
+      expect(isNetworkCommand("   ")).toBe(false);
+    });
+  });
+
+  // =============================================
+  // 12. ACCESS CONTROL CROSS-CHECK
+  // =============================================
+  describe("Access control cross-check (network toggle)", () => {
+    function setNetworkToggle(enabled: boolean) {
+      mockDeriveAccessState.mockReturnValue({
+        toggles: [
+          { category: "filesystem", enabled: true },
+          { category: "mcp_servers", enabled: true },
+          { category: "network", enabled },
+          { category: "system_commands", enabled: false },
+        ],
+        mcpServers: [],
+        openclawConfigAvailable: true,
+      });
+    }
+
+    it("should auto-deny curl when network toggle is OFF", () => {
+      setNetworkToggle(false);
+      const req = makeRequest({ command: "curl https://example.com" });
+      service.handleRequest(req);
+
+      expect(client.resolveExecApproval).toHaveBeenCalledWith(req.id, "deny");
+      expect(io.emit).toHaveBeenCalledWith(
+        "safeclaw:execApprovalResolved",
+        expect.objectContaining({
+          id: req.id,
+          decision: "deny",
+          decidedBy: "access-control",
+        }),
+      );
+    });
+
+    it("should auto-deny wget when network toggle is OFF", () => {
+      setNetworkToggle(false);
+      const req = makeRequest({ command: "wget https://example.com/file" });
+      service.handleRequest(req);
+
+      expect(client.resolveExecApproval).toHaveBeenCalledWith(req.id, "deny");
+    });
+
+    it("should auto-deny ssh when network toggle is OFF", () => {
+      setNetworkToggle(false);
+      const req = makeRequest({ command: "ssh user@host" });
+      service.handleRequest(req);
+
+      expect(client.resolveExecApproval).toHaveBeenCalledWith(req.id, "deny");
+    });
+
+    it("should auto-deny full-path network commands when network is OFF", () => {
+      setNetworkToggle(false);
+      const req = makeRequest({ command: "/usr/bin/curl https://example.com" });
+      service.handleRequest(req);
+
+      expect(client.resolveExecApproval).toHaveBeenCalledWith(req.id, "deny");
+      expect(io.emit).toHaveBeenCalledWith(
+        "safeclaw:execApprovalResolved",
+        expect.objectContaining({
+          decidedBy: "access-control",
+        }),
+      );
+    });
+
+    it("should auto-approve network commands when network toggle is ON", () => {
+      setNetworkToggle(true);
+      const req = makeRequest({ command: "curl https://example.com" });
+      service.handleRequest(req);
+
+      expect(client.resolveExecApproval).toHaveBeenCalledWith(req.id, "allow-once");
+    });
+
+    it("should auto-approve non-network commands when network toggle is OFF", () => {
+      setNetworkToggle(false);
+      const req = makeRequest({ command: "echo hello" });
+      service.handleRequest(req);
+
+      expect(client.resolveExecApproval).toHaveBeenCalledWith(req.id, "allow-once");
+      expect(io.emit).toHaveBeenCalledWith(
+        "safeclaw:execApprovalResolved",
+        expect.objectContaining({
+          decidedBy: "auto-approve",
+        }),
+      );
+    });
+
+    it("should persist access-control denial to database", () => {
+      setNetworkToggle(false);
+      const req = makeRequest({ command: "curl https://example.com" });
+      service.handleRequest(req);
+
+      const history = service.getHistory(10);
+      expect(history).toHaveLength(1);
+      expect(history[0].decision).toBe("deny");
+      expect(history[0].decidedBy).toBe("access-control");
+    });
+
+    it("should give blocklist precedence over access-control denial", () => {
+      setNetworkToggle(false);
+      service.addRestrictedPattern("curl *");
+      const req = makeRequest({ command: "curl https://example.com" });
+      service.handleRequest(req);
+
+      // Should be queued for manual approval (blocklist match), not auto-denied
+      expect(service.getPendingApprovals()).toHaveLength(1);
+      expect(io.emit).toHaveBeenCalledWith(
+        "safeclaw:execApprovalRequested",
+        expect.objectContaining({ id: req.id }),
+      );
+    });
+
+    it("should not create a pending entry for access-control denial", () => {
+      setNetworkToggle(false);
+      const req = makeRequest({ command: "curl https://example.com" });
+      service.handleRequest(req);
+
+      expect(service.getPendingApprovals()).toHaveLength(0);
+    });
+
+    it("should handle deriveAccessState throwing gracefully", () => {
+      mockDeriveAccessState.mockImplementation(() => {
+        throw new Error("Config file missing");
+      });
+      const req = makeRequest({ command: "curl https://example.com" });
+      service.handleRequest(req);
+
+      // Should fall through to auto-approve
+      expect(client.resolveExecApproval).toHaveBeenCalledWith(req.id, "allow-once");
     });
   });
 });

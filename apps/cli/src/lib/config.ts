@@ -10,6 +10,9 @@ const DEFAULT_CONFIG: SafeClawConfig = {
   autoOpenBrowser: true,
   premium: false,
   userId: null,
+  srt: {
+    enabled: false,
+  },
 };
 
 export function ensureDataDir(): void {

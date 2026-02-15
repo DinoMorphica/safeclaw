@@ -146,6 +146,7 @@ export interface ServerToClientEvents {
   "safeclaw:execApprovalResolved": (payload: ExecApprovalEntry) => void;
   "safeclaw:approvalHistoryBatch": (payload: ExecApprovalEntry[]) => void;
   "safeclaw:allowlistState": (payload: AllowlistState) => void;
+  "safeclaw:srtStatus": (payload: SrtStatus) => void;
 }
 
 export interface ClientToServerEvents {
@@ -194,6 +195,14 @@ export interface ClientToServerEvents {
     serverName: string;
     enabled: boolean;
   }) => void;
+  "safeclaw:getSrtStatus": () => void;
+  "safeclaw:toggleSrt": (payload: { enabled: boolean }) => void;
+  "safeclaw:updateSrtDomains": (payload: {
+    list: "allow" | "deny";
+    action: "add" | "remove";
+    domain: string;
+  }) => void;
+  "safeclaw:updateSrtSettings": (payload: Partial<SrtSettings>) => void;
 }
 
 export interface DashboardStats {
@@ -228,7 +237,7 @@ export interface ExecApprovalEntry {
   requestedAt: string;
   expiresAt: string;
   decision: ExecDecision | null;
-  decidedBy: "user" | "auto-deny" | null;
+  decidedBy: "user" | "auto-deny" | "auto-approve" | "access-control" | null;
   decidedAt: string | null;
 }
 
@@ -247,6 +256,10 @@ export interface SafeClawConfig {
   autoOpenBrowser: boolean;
   premium: boolean;
   userId: string | null;
+  srt?: {
+    enabled: boolean;
+    settingsPath?: string;
+  };
 }
 
 // --- Access control types ---
@@ -419,6 +432,11 @@ export interface SkillScanResult {
   scanDurationMs: number;
 }
 
+export interface SkillCleanResult {
+  cleanedContent: string;
+  removedCount: number;
+}
+
 // --- Security Posture types ---
 export type SecurityLayerStatus = "configured" | "partial" | "unconfigured" | "error";
 
@@ -447,4 +465,30 @@ export interface SecurityPosture {
   unconfiguredLayers: number;
   totalLayers: number;
   checkedAt: string;
+}
+
+// --- SRT (Sandbox Runtime) types ---
+export interface SrtNetworkConfig {
+  allowedDomains: string[];
+  deniedDomains: string[];
+  allowLocalBinding: boolean;
+}
+
+export interface SrtFilesystemConfig {
+  denyRead: string[];
+  allowWrite: string[];
+  denyWrite: string[];
+}
+
+export interface SrtSettings {
+  network: SrtNetworkConfig;
+  filesystem: SrtFilesystemConfig;
+}
+
+export interface SrtStatus {
+  installed: boolean;
+  version: string | null;
+  enabled: boolean;
+  settingsPath: string;
+  settings: SrtSettings | null;
 }

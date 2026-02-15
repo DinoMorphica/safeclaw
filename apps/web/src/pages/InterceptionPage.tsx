@@ -4,6 +4,7 @@ import type {
   ExecApprovalEntry,
   AllowlistState,
   ExecDecision,
+  OpenClawMonitorStatus,
 } from "@safeclaw/shared";
 
 const DECISION_COLORS: Record<string, string> = {
@@ -90,6 +91,8 @@ export function InterceptionPage() {
   const [allowlist, setAllowlist] = useState<string[]>([]);
   const [newPattern, setNewPattern] = useState("");
   const [loading, setLoading] = useState(true);
+  const [gatewayStatus, setGatewayStatus] =
+    useState<OpenClawMonitorStatus | null>(null);
 
   const handleApprovalRequested = useCallback(
     (entry: ExecApprovalEntry) => {
@@ -126,11 +129,13 @@ export function InterceptionPage() {
     socket.emit("safeclaw:getPendingApprovals");
     socket.emit("safeclaw:getApprovalHistory", { limit: 50 });
     socket.emit("safeclaw:getAllowlist");
+    socket.emit("safeclaw:getOpenclawMonitorStatus");
 
     socket.on("safeclaw:execApprovalRequested", handleApprovalRequested);
     socket.on("safeclaw:execApprovalResolved", handleApprovalResolved);
     socket.on("safeclaw:approvalHistoryBatch", handleHistoryBatch);
     socket.on("safeclaw:allowlistState", handleAllowlistState);
+    socket.on("safeclaw:openclawMonitorStatus", setGatewayStatus);
 
     const timeout = setTimeout(() => setLoading(false), 1000);
 
@@ -139,6 +144,7 @@ export function InterceptionPage() {
       socket.off("safeclaw:execApprovalResolved", handleApprovalResolved);
       socket.off("safeclaw:approvalHistoryBatch", handleHistoryBatch);
       socket.off("safeclaw:allowlistState", handleAllowlistState);
+      socket.off("safeclaw:openclawMonitorStatus", setGatewayStatus);
       clearTimeout(timeout);
     };
   }, [handleApprovalRequested, handleApprovalResolved, handleHistoryBatch, handleAllowlistState]);
@@ -148,6 +154,7 @@ export function InterceptionPage() {
     const onReconnect = () => {
       socket.emit("safeclaw:getPendingApprovals");
       socket.emit("safeclaw:getAllowlist");
+      socket.emit("safeclaw:getOpenclawMonitorStatus");
     };
     socket.on("connect", onReconnect);
     return () => {
@@ -170,9 +177,40 @@ export function InterceptionPage() {
     socket.emit("safeclaw:removeAllowlistPattern", { pattern });
   };
 
+  const isGatewayConnected = gatewayStatus?.connectionStatus === "connected";
+  const isGatewayConnecting = gatewayStatus?.connectionStatus === "connecting";
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">Command Interception</h2>
+
+      {/* Gateway connection status */}
+      {gatewayStatus && !isGatewayConnected && (
+        <div
+          className={`rounded-xl border px-4 py-3 mb-6 ${
+            isGatewayConnecting
+              ? "border-yellow-700/50 bg-yellow-900/20"
+              : "border-red-700/50 bg-red-900/20"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-2 w-2 rounded-full shrink-0 ${
+                isGatewayConnecting
+                  ? "bg-yellow-400 animate-pulse"
+                  : "bg-red-400"
+              }`}
+            />
+            <p
+              className={`text-sm ${isGatewayConnecting ? "text-yellow-400" : "text-red-400"}`}
+            >
+              {isGatewayConnecting
+                ? "Connecting to OpenClaw gateway... Exec approvals cannot be processed until connected."
+                : "OpenClaw gateway not connected. Exec approvals cannot be processed \u2014 commands will fall back to the askFallback policy (deny by default)."}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Section 1: Restricted Commands */}
       <div className="mb-8">
@@ -274,13 +312,19 @@ export function InterceptionPage() {
                 >
                   {entry.decidedBy === "auto-deny"
                     ? "TIMED OUT"
-                    : DECISION_LABELS[entry.decision ?? "deny"] ?? "UNKNOWN"}
+                    : entry.decidedBy === "access-control"
+                      ? "BLOCKED (ACCESS)"
+                      : DECISION_LABELS[entry.decision ?? "deny"] ?? "UNKNOWN"}
                 </span>
                 <code className="text-sm text-gray-300 flex-1 truncate">
                   {entry.command}
                 </code>
                 <span className="text-xs text-gray-600 whitespace-nowrap">
-                  {entry.decidedBy === "auto-deny" ? "auto" : "user"}
+                  {entry.decidedBy === "auto-approve" || entry.decidedBy === "auto-deny"
+                    ? "auto"
+                    : entry.decidedBy === "access-control"
+                      ? "policy"
+                      : "user"}
                 </span>
                 <span className="text-xs text-gray-500 whitespace-nowrap">
                   {entry.decidedAt

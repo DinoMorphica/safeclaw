@@ -11,6 +11,7 @@ import { deriveAccessState } from "./access-control.js";
 import { getOpenClawMonitor } from "./openclaw-monitor.js";
 import { getDb, schema } from "../db/index.js";
 import { eq, ne, and, sql } from "drizzle-orm";
+import { getSrtStatus } from "../lib/srt-config.js";
 
 function buildLayer(
   id: string,
@@ -464,6 +465,13 @@ async function checkEgressProxyLayer(): Promise<SecurityLayer> {
     process.env.NO_PROXY || process.env.no_proxy || "";
   const proxyBypassed = noProxy.trim() === "*";
 
+  const srtStatus = getSrtStatus();
+  const srtActive = srtStatus.enabled && srtStatus.installed;
+  const srtHasDomainRules =
+    srtStatus.settings != null &&
+    (srtStatus.settings.network.allowedDomains.length > 0 ||
+      srtStatus.settings.network.deniedDomains.length > 0);
+
   const db = getDb();
   const exfilActivities = await db
     .select({ count: sql<number>`count(*)` })
@@ -490,12 +498,25 @@ async function checkEgressProxyLayer(): Promise<SecurityLayer> {
 
   const checks: SecurityCheck[] = [
     {
-      id: "egress-proxy-configured",
-      label: "Egress proxy configured",
-      passed: proxyConfigured,
-      detail: proxyConfigured
-        ? "HTTP/HTTPS proxy environment variables are set"
-        : "No proxy configured — agent traffic is not filtered",
+      id: "egress-filtering-configured",
+      label: "Egress filtering configured",
+      passed: proxyConfigured || srtActive,
+      detail: srtActive
+        ? "Sandbox Runtime (srt) is active — network egress is filtered"
+        : proxyConfigured
+          ? "HTTP/HTTPS proxy environment variables are set"
+          : "No egress filtering — configure srt or set HTTP_PROXY/HTTPS_PROXY",
+      severity: "warning",
+    },
+    {
+      id: "egress-domain-rules",
+      label: "Domain filtering rules configured",
+      passed: srtHasDomainRules,
+      detail: srtHasDomainRules
+        ? `srt domain rules: ${srtStatus.settings!.network.allowedDomains.length} allowed, ${srtStatus.settings!.network.deniedDomains.length} denied`
+        : srtActive
+          ? "srt is active but no domain allow/deny rules configured"
+          : "No domain filtering rules — enable srt and add allowed domains",
       severity: "warning",
     },
     {
@@ -556,7 +577,9 @@ function checkGatewaySecurityLayer(): SecurityLayer {
     gwBind === undefined ||
     gwBind === null ||
     gwBind === "127.0.0.1" ||
-    gwBind === "localhost";
+    gwBind === "localhost" ||
+    gwBind === "loopback" ||
+    gwBind === "::1";
 
   const channels = config?.channels as
     | Record<string, unknown>

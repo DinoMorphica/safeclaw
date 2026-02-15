@@ -38,7 +38,11 @@ export const safeClawConfigSchema = z.object({
   autoOpenBrowser: z.boolean().default(true),
   premium: z.boolean().default(false),
   userId: z.string().nullable().default(null),
-});
+  srt: z.object({
+    enabled: z.boolean(),
+    settingsPath: z.string().optional(),
+  }).optional(),
+}).passthrough();
 
 export const activityTypeSchema = z.enum([
   "file_read",
@@ -224,7 +228,7 @@ export const execApprovalEntrySchema = z.object({
   requestedAt: z.string(),
   expiresAt: z.string(),
   decision: execDecisionSchema.nullable(),
-  decidedBy: z.enum(["user", "auto-deny"]).nullable(),
+  decidedBy: z.enum(["user", "auto-deny", "auto-approve", "access-control"]).nullable(),
   decidedAt: z.string().nullable(),
 });
 
@@ -273,6 +277,11 @@ export const skillScanResultSchema = z.object({
   scanDurationMs: z.number(),
 });
 
+export const skillCleanResultSchema = z.object({
+  cleanedContent: z.string(),
+  removedCount: z.number(),
+});
+
 // --- Security Posture schemas ---
 
 export const securityLayerStatusSchema = z.enum([
@@ -304,4 +313,31 @@ export const securityPostureSchema = z.object({
   unconfiguredLayers: z.number(),
   totalLayers: z.number(),
   checkedAt: z.string(),
+}).passthrough();
+
+// --- SRT (Sandbox Runtime) schemas ---
+
+export const srtNetworkConfigSchema = z.object({
+  allowedDomains: z.array(z.string()),
+  deniedDomains: z.array(z.string()),
+  allowLocalBinding: z.boolean(),
+}).passthrough();
+
+export const srtFilesystemConfigSchema = z.object({
+  denyRead: z.array(z.string()),
+  allowWrite: z.array(z.string()),
+  denyWrite: z.array(z.string()),
+}).passthrough();
+
+export const srtSettingsSchema = z.object({
+  network: srtNetworkConfigSchema,
+  filesystem: srtFilesystemConfigSchema,
+}).passthrough();
+
+export const srtStatusSchema = z.object({
+  installed: z.boolean(),
+  version: z.string().nullable(),
+  enabled: z.boolean(),
+  settingsPath: z.string(),
+  settings: srtSettingsSchema.nullable(),
 }).passthrough();

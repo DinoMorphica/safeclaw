@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { SKILL_SCAN_CATEGORIES } from "../lib/skill-scan-categories";
-import type { SkillScanResult, SkillScanFinding } from "@safeclaw/shared";
+import type { SkillScanResult, SkillScanFinding, SkillCleanResult } from "@safeclaw/shared";
 
 const THREAT_COLORS: Record<string, string> = {
   CRITICAL: "text-red-400",
@@ -57,6 +57,7 @@ export function SkillScannerPage() {
   const [error, setError] = useState<string | null>(null);
   const [severityFilter, setSeverityFilter] = useState<string>("ALL");
   const [expandedFinding, setExpandedFinding] = useState<number | null>(null);
+  const [cleaning, setCleaning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleScan = useCallback(async () => {
@@ -109,6 +110,59 @@ export function SkillScannerPage() {
     setError(null);
     setExpandedFinding(null);
   }, []);
+
+  const handleClean = useCallback(async () => {
+    if (!content.trim()) return;
+    setCleaning(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/skill-scanner/clean", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError((data as { error?: string }).error ?? `Clean failed (HTTP ${res.status})`);
+        return;
+      }
+      const data = (await res.json()) as SkillCleanResult;
+      setContent(data.cleanedContent);
+      // Auto-trigger re-scan on cleaned content
+      setResult(null);
+      setExpandedFinding(null);
+      setTimeout(async () => {
+        try {
+          const scanRes = await fetch("/api/skill-scanner/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: data.cleanedContent }),
+          });
+          if (scanRes.ok) {
+            const scanData = (await scanRes.json()) as SkillScanResult;
+            setResult(scanData);
+          }
+        } catch {
+          // Scan after clean is best-effort
+        }
+      }, 0);
+    } catch {
+      setError("Failed to connect to scanner. Is the backend running?");
+    } finally {
+      setCleaning(false);
+    }
+  }, [content]);
+
+  const handleDownload = useCallback(() => {
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cleaned-skill.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [content]);
 
   const filteredFindings = useMemo(() => {
     if (!result) return [];
@@ -191,9 +245,26 @@ export function SkillScannerPage() {
                   {SEVERITY_BANNER[result.overallSeverity].label}
                 </span>
               </div>
-              <div className="flex items-center gap-4 text-xs text-gray-500">
-                <span>{result.contentLength.toLocaleString()} chars scanned</span>
-                <span>{result.scanDurationMs}ms</span>
+              <div className="flex items-center gap-3">
+                {result.overallSeverity !== "NONE" && (
+                  <button
+                    onClick={handleClean}
+                    disabled={cleaning}
+                    className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {cleaning ? "Cleaning..." : "Clean Skill"}
+                  </button>
+                )}
+                <button
+                  onClick={handleDownload}
+                  className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors cursor-pointer"
+                >
+                  Download .md
+                </button>
+                <div className="flex items-center gap-4 text-xs text-gray-500 ml-1">
+                  <span>{result.contentLength.toLocaleString()} chars</span>
+                  <span>{result.scanDurationMs}ms</span>
+                </div>
               </div>
             </div>
           </div>

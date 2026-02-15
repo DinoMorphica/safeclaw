@@ -24,9 +24,11 @@ export function writeOpenClawConfig(updates: Partial<OpenClawConfig>): OpenClawC
   const current = readOpenClawConfig();
   if (!current) return null;
 
-  const merged = deepMerge(current as Record<string, unknown>, updates as Record<string, unknown>) as OpenClawConfig;
-  fs.writeFileSync(OPENCLAW_CONFIG_PATH, JSON.stringify(merged, null, 2));
-  return merged;
+  const merged = deepMerge(current as Record<string, unknown>, updates as Record<string, unknown>);
+  // Strip null values so we don't pollute the config file — null means "remove this key"
+  const cleaned = stripNulls(merged) as OpenClawConfig;
+  fs.writeFileSync(OPENCLAW_CONFIG_PATH, JSON.stringify(cleaned, null, 2));
+  return cleaned;
 }
 
 function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
@@ -45,6 +47,26 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
       result[key] = deepMerge(tgtVal as Record<string, unknown>, srcVal as Record<string, unknown>);
     } else {
       result[key] = srcVal;
+    }
+  }
+  return result;
+}
+
+/**
+ * Recursively remove keys with null values from an object.
+ * Null in a deep-merge means "delete this key".
+ */
+function stripNulls(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val === null) continue;
+    if (typeof val === "object" && !Array.isArray(val)) {
+      const cleaned = stripNulls(val as Record<string, unknown>);
+      if (Object.keys(cleaned).length > 0) {
+        result[key] = cleaned;
+      }
+    } else {
+      result[key] = val;
     }
   }
   return result;

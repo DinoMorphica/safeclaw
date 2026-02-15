@@ -14,7 +14,7 @@ export const SECURITY_LAYER_META: Record<string, SecurityLayerMeta> = {
     description:
       "Run the agent in an isolated environment with filesystem and network boundaries",
     icon: "Box",
-    actionPath: "/access",
+    actionPath: "/access#sandbox",
     actionLabel: "Configure in Access Control",
     owaspRefs: ["ASI05"],
     guidance:
@@ -67,13 +67,13 @@ export const SECURITY_LAYER_META: Record<string, SecurityLayerMeta> = {
   "egress-proxy": {
     name: "Egress Proxy & Domain Filtering",
     description:
-      "Control outbound traffic through proxy filtering and domain restrictions",
+      "Control outbound traffic through Sandbox Runtime (srt) domain filtering or proxy environment variables",
     icon: "Shield",
-    actionPath: "/access",
+    actionPath: "/access#egress",
     actionLabel: "Configure in Access Control",
     owaspRefs: ["ASI01"],
     guidance:
-      "Anthropic recommends routing all agent internet access through an egress proxy with domain allowlists. Set HTTP_PROXY/HTTPS_PROXY environment variables to route traffic through a filtering proxy. Monitor and resolve exfiltration threats promptly.",
+      "Anthropic recommends using Sandbox Runtime (srt) to enforce network domain allowlists. Enable srt in Access Control and add allowed domains — all other network access is denied by default. Alternatively, set HTTP_PROXY/HTTPS_PROXY environment variables. Launch your agent with `srt openclaw start` to enforce filtering.",
   },
   gateway: {
     name: "Gateway & Inbound Security",

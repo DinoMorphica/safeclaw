@@ -5,10 +5,20 @@ import { readConfig, writeConfig } from "../lib/config.js";
 import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.js";
 import { getOpenClawMonitor } from "../services/openclaw-monitor.js";
 import { deriveAccessState, applyAccessToggle, applyMcpServerToggle } from "../services/access-control.js";
-import type { OpenClawConfig, ThreatLevel, ExecDecision } from "@safeclaw/shared";
+import type { OpenClawConfig, ThreatLevel, ExecDecision, SrtSettings } from "@safeclaw/shared";
 import { skillScanRequestSchema } from "@safeclaw/shared";
-import { scanSkillDefinition } from "../lib/skill-scanner.js";
+import { scanSkillDefinition, cleanSkillDefinition } from "../lib/skill-scanner.js";
 import { computeSecurityPosture } from "../services/security-posture.js";
+import {
+  getSrtStatus,
+  toggleSrt,
+  readSrtSettings,
+  updateSrtSettings,
+  addAllowedDomain,
+  removeAllowedDomain,
+  addDeniedDomain,
+  removeDeniedDomain,
+} from "../lib/srt-config.js";
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/health", async () => {
@@ -254,5 +264,56 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     }
     const result = scanSkillDefinition(parsed.data.content);
     return result;
+  });
+
+  app.post("/api/skill-scanner/clean", async (request, reply) => {
+    const parsed = skillScanRequestSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "Invalid request. Provide { content: string } (1 to 500K chars)." });
+    }
+    const result = cleanSkillDefinition(parsed.data.content);
+    return result;
+  });
+
+  // --- SRT (Sandbox Runtime) routes ---
+
+  app.get("/api/srt/status", async () => {
+    return getSrtStatus();
+  });
+
+  app.put("/api/srt/toggle", async (request) => {
+    const { enabled } = request.body as { enabled: boolean };
+    return toggleSrt(enabled);
+  });
+
+  app.get("/api/srt/settings", async () => {
+    return readSrtSettings() ?? { error: "SRT settings file not found" };
+  });
+
+  app.put("/api/srt/settings", async (request) => {
+    const updates = request.body as Partial<SrtSettings>;
+    return updateSrtSettings(updates);
+  });
+
+  app.post("/api/srt/domains/:list", async (request, reply) => {
+    const { list } = request.params as { list: string };
+    const { domain } = request.body as { domain: string };
+    if (!domain?.trim()) {
+      return reply.status(400).send({ error: "Domain is required" });
+    }
+    if (list === "allow") return addAllowedDomain(domain);
+    if (list === "deny") return addDeniedDomain(domain);
+    return reply.status(400).send({ error: "List must be 'allow' or 'deny'" });
+  });
+
+  app.delete("/api/srt/domains/:list", async (request, reply) => {
+    const { list } = request.params as { list: string };
+    const { domain } = request.body as { domain: string };
+    if (!domain?.trim()) {
+      return reply.status(400).send({ error: "Domain is required" });
+    }
+    if (list === "allow") return removeAllowedDomain(domain);
+    if (list === "deny") return removeDeniedDomain(domain);
+    return reply.status(400).send({ error: "List must be 'allow' or 'deny'" });
   });
 }

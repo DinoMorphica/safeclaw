@@ -1,8 +1,8 @@
 // Skill Scanner — static security analysis engine for markdown skill definitions
 // Runs 15 analyzers (SK-* categories) and returns structured findings
 
-import type { ThreatLevel, SkillScanCategoryId, SkillScanFinding, SkillScanResult } from "@safeclaw/shared";
-import { scanForSecrets } from "./secret-scanner.js";
+import type { ThreatLevel, SkillScanCategoryId, SkillScanFinding, SkillScanResult, SkillCleanResult } from "@safeclaw/shared";
+import { scanForSecrets, SECRET_PATTERNS } from "./secret-scanner.js";
 import { EXFILTRATION_URLS, SENSITIVE_PATH_RULES } from "./threat-patterns.js";
 import {
   HIDDEN_CONTENT_PATTERNS,
@@ -366,4 +366,82 @@ export function scanSkillDefinition(content: string): SkillScanResult {
     contentLength: content.length,
     scanDurationMs,
   };
+}
+
+// --- Clean Skill Definition ---
+
+function collectRanges(content: string, pattern: RegExp): { start: number; end: number }[] {
+  const ranges: { start: number; end: number }[] = [];
+  const flags = pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g";
+  const re = new RegExp(pattern.source, flags);
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(content)) !== null) {
+    ranges.push({ start: m.index, end: m.index + m[0].length });
+    if (m[0].length === 0) break; // prevent infinite loop on zero-length match
+  }
+  return ranges;
+}
+
+export function cleanSkillDefinition(content: string): SkillCleanResult {
+  const ranges: { start: number; end: number }[] = [];
+
+  // Gather from all ScanPattern[] arrays
+  const allScanPatterns = [
+    ...HIDDEN_CONTENT_PATTERNS,
+    ...PROMPT_INJECTION_PATTERNS,
+    ...SHELL_EXECUTION_PATTERNS,
+    ...DATA_EXFILTRATION_PATTERNS,
+    ...MEMORY_POISONING_PATTERNS,
+    ...SUPPLY_CHAIN_PATTERNS,
+    ...ENCODED_PAYLOAD_PATTERNS,
+    ...IMAGE_EXFIL_PATTERNS,
+    ...SYSTEM_PROMPT_EXTRACTION_PATTERNS,
+    ...ARGUMENT_INJECTION_PATTERNS,
+    ...CROSS_TOOL_PATTERNS,
+    ...EXCESSIVE_PERMISSION_PATTERNS,
+  ];
+
+  for (const { pattern } of allScanPatterns) {
+    ranges.push(...collectRanges(content, pattern));
+  }
+
+  // Gather from EXFILTRATION_URLS
+  for (const { pattern } of EXFILTRATION_URLS) {
+    ranges.push(...collectRanges(content, pattern));
+  }
+
+  // Gather from SENSITIVE_PATH_RULES
+  for (const { pattern } of SENSITIVE_PATH_RULES) {
+    ranges.push(...collectRanges(content, pattern));
+  }
+
+  // Gather from SECRET_PATTERNS
+  for (const { pattern } of SECRET_PATTERNS) {
+    ranges.push(...collectRanges(content, pattern));
+  }
+
+  if (ranges.length === 0) return { cleanedContent: content, removedCount: 0 };
+
+  // Sort by start position, merge overlapping/adjacent ranges
+  ranges.sort((a, b) => a.start - b.start);
+  const merged = [{ ...ranges[0] }];
+  for (let i = 1; i < ranges.length; i++) {
+    const last = merged[merged.length - 1];
+    if (ranges[i].start <= last.end) {
+      last.end = Math.max(last.end, ranges[i].end);
+    } else {
+      merged.push({ ...ranges[i] });
+    }
+  }
+
+  // Remove ranges from end to start to preserve earlier indices
+  let cleaned = content;
+  for (let i = merged.length - 1; i >= 0; i--) {
+    cleaned = cleaned.slice(0, merged[i].start) + cleaned.slice(merged[i].end);
+  }
+
+  // Collapse 3+ consecutive blank lines to 2, trim
+  cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim() + "\n";
+
+  return { cleanedContent: cleaned, removedCount: ranges.length };
 }

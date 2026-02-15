@@ -17,6 +17,8 @@ export const OPENCLAW_DEVICE_JSON = path.join(OPENCLAW_IDENTITY_DIR, "device.jso
 export const OPENCLAW_DEVICE_AUTH_JSON = path.join(OPENCLAW_IDENTITY_DIR, "device-auth.json");
 export const OPENCLAW_EXEC_APPROVALS_PATH = path.join(OPENCLAW_DIR, "exec-approvals.json");
 
+export const SRT_SETTINGS_PATH = path.join(HOME, ".srt-settings.json");
+
 export function getPublicDir(): string {
   const currentDir = path.dirname(new URL(import.meta.url).pathname);
   // In bundled output (dist/main.js), public/ is at ../public

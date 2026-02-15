@@ -2,6 +2,7 @@ import { eq, desc, sql } from "drizzle-orm";
 import path from "node:path";
 import { logger } from "../lib/logger.js";
 import { getDb, schema } from "../db/index.js";
+import { deriveAccessState } from "./access-control.js";
 import type {
   OpenClawClient,
   ExecApprovalRequest,
@@ -32,6 +33,25 @@ export function matchesPattern(command: string, pattern: string): boolean {
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
   const regexStr = "^" + escaped.replace(/\*/g, ".*") + "$";
   return new RegExp(regexStr, "i").test(command);
+}
+
+const NETWORK_BINARIES: ReadonlySet<string> = new Set([
+  "curl", "wget", "httpie", "http",
+  "ssh", "scp", "sftp",
+  "nc", "ncat", "netcat",
+  "dig", "nslookup", "host",
+  "ping", "traceroute", "tracepath", "mtr",
+  "telnet", "ftp", "lftp",
+  "rsync", "socat", "nmap",
+]);
+
+export function isNetworkCommand(command: string): boolean {
+  const firstToken = command.trim().split(/\s+/)[0];
+  if (!firstToken) return false;
+  const basename = firstToken.includes("/")
+    ? firstToken.split("/").pop()!
+    : firstToken;
+  return NETWORK_BINARIES.has(basename.toLowerCase());
 }
 
 export class ExecApprovalService {
@@ -85,8 +105,64 @@ export class ExecApprovalService {
     const matchedPattern = this.findMatchingPattern(request.command);
 
     if (!matchedPattern) {
-      // Not restricted → auto-approve immediately
+      // Access control cross-check: deny network commands when toggle is OFF
+      if (isNetworkCommand(request.command)) {
+        try {
+          const accessState = deriveAccessState();
+          const networkToggle = accessState.toggles.find(
+            (t) => t.category === "network",
+          );
+          if (networkToggle && !networkToggle.enabled) {
+            this.resolveToGateway(request.id, "deny");
+            const now = new Date();
+            const entry: ExecApprovalEntry = {
+              id: request.id,
+              command: request.command,
+              cwd: request.cwd,
+              security: request.security,
+              sessionKey: request.sessionKey,
+              requestedAt: now.toISOString(),
+              expiresAt: now.toISOString(),
+              decision: "deny",
+              decidedBy: "access-control",
+              decidedAt: now.toISOString(),
+            };
+            this.persistApproval(entry, null);
+            this.io.emit("safeclaw:execApprovalResolved", entry);
+            logger.info(
+              { command: request.command },
+              "Network command auto-denied (network toggle OFF)",
+            );
+            return;
+          }
+        } catch {
+          // If access state can't be read, fall through to auto-approve
+          logger.debug(
+            { command: request.command },
+            "Could not read access state for network check, falling through",
+          );
+        }
+      }
+
+      // Not restricted, not blocked by access control → auto-approve
       this.resolveToGateway(request.id, "allow-once");
+
+      const now = new Date();
+      const entry: ExecApprovalEntry = {
+        id: request.id,
+        command: request.command,
+        cwd: request.cwd,
+        security: request.security,
+        sessionKey: request.sessionKey,
+        requestedAt: now.toISOString(),
+        expiresAt: now.toISOString(),
+        decision: "allow-once",
+        decidedBy: "auto-approve",
+        decidedAt: now.toISOString(),
+      };
+
+      this.persistApproval(entry, null);
+      this.io.emit("safeclaw:execApprovalResolved", entry);
 
       logger.debug(
         { command: request.command },
@@ -470,7 +546,7 @@ export class ExecApprovalService {
         requestedAt: r.requestedAt,
         expiresAt: r.expiresAt,
         decision: r.decision as ExecDecision | null,
-        decidedBy: r.decidedBy as "user" | "auto-deny" | null,
+        decidedBy: r.decidedBy as "user" | "auto-deny" | "auto-approve" | "access-control" | null,
         decidedAt: r.decidedAt,
       }));
     } catch (err) {

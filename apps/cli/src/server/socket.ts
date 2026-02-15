@@ -11,6 +11,15 @@ import { readConfig, writeConfig } from "../lib/config.js";
 import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.js";
 import { getOpenClawMonitor } from "../services/openclaw-monitor.js";
 import { deriveAccessState, applyAccessToggle, applyMcpServerToggle } from "../services/access-control.js";
+import {
+  getSrtStatus,
+  toggleSrt,
+  addAllowedDomain,
+  removeAllowedDomain,
+  addDeniedDomain,
+  removeDeniedDomain,
+  updateSrtSettings,
+} from "../lib/srt-config.js";
 
 export type TypedSocketServer = SocketIOServer<
   ClientToServerEvents,
@@ -336,6 +345,44 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
         service.removeRestrictedPattern(pattern);
       } catch (err) {
         logger.error({ err, pattern }, "Failed to remove restricted pattern");
+      }
+    });
+
+    // --- SRT (Sandbox Runtime) events ---
+
+    socket.on("safeclaw:getSrtStatus", () => {
+      socket.emit("safeclaw:srtStatus", getSrtStatus());
+    });
+
+    socket.on("safeclaw:toggleSrt", ({ enabled }) => {
+      const status = toggleSrt(enabled);
+      logger.info(`SRT toggled: enabled=${enabled}`);
+      io!.emit("safeclaw:srtStatus", status);
+    });
+
+    socket.on("safeclaw:updateSrtDomains", ({ list, action, domain }) => {
+      try {
+        if (list === "allow") {
+          if (action === "add") addAllowedDomain(domain);
+          else removeAllowedDomain(domain);
+        } else {
+          if (action === "add") addDeniedDomain(domain);
+          else removeDeniedDomain(domain);
+        }
+        logger.info({ list, action, domain }, "SRT domain updated");
+        io!.emit("safeclaw:srtStatus", getSrtStatus());
+      } catch (err) {
+        logger.error({ err, list, action, domain }, "Failed to update SRT domain");
+      }
+    });
+
+    socket.on("safeclaw:updateSrtSettings", (updates) => {
+      try {
+        updateSrtSettings(updates);
+        logger.info({ updates }, "SRT settings updated");
+        io!.emit("safeclaw:srtStatus", getSrtStatus());
+      } catch (err) {
+        logger.error({ err }, "Failed to update SRT settings");
       }
     });
 
