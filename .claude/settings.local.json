@@ -43,7 +43,14 @@
       "WebFetch(domain:www.paloaltonetworks.com)",
       "Bash(python3:*)",
       "WebFetch(domain:docs.anthropic.com)",
-      "Bash(srt --version:*)"
+      "Bash(srt --version:*)",
+      "Bash(npm version:*)",
+      "Bash(pnpm pack:*)",
+      "Bash(npm pack:*)",
+      "Bash(pnpm clean:*)",
+      "Bash(pnpm publish:*)",
+      "Bash(npm whoami:*)",
+      "Bash(npm publish:*)"
     ]
   }
 }
