@@ -2,14 +2,14 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "noEmit": true,
     "declaration": false,
     "declarationMap": false,
-    "noEmit": true,
-    "types": ["vite/client"]
+    "composite": false,
+    "types": ["vite/client"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src"],
+  "include": ["web"],
   "references": [
     { "path": "../../packages/shared" }
   ]

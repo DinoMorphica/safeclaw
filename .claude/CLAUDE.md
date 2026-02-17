@@ -18,46 +18,44 @@ SafeClaw is a **security management dashboard for AI agents**. It monitors, inte
 ```
 safeclaw-monorepo/
 ├── apps/
-│   ├── cli/                  # Backend – Fastify 5, SQLite, CLI (package: "safeclaw")
-│   │   ├── bin/safeclaw.js   # npx entry (shebang → dist/main.js)
-│   │   ├── src/
-│   │   │   ├── main.ts                    # CLI: start|reset|status|doctor|config|logs
-│   │   │   ├── interceptor.ts             # Unified activity threat analyzer wrapper
-│   │   │   ├── commands/                  # 6 commands: start, reset, status, doctor, config, logs
-│   │   │   ├── db/                        # index.ts (Drizzle singleton), schema.ts (7 tables), migrate.ts
-│   │   │   ├── lib/                       # 12 utility modules
-│   │   │   │   ├── openclaw-client.ts     # WebSocket gateway client (846 lines, largest file)
-│   │   │   │   ├── threat-classifier.ts   # 10 threat category analyzers (553 lines)
-│   │   │   │   ├── threat-patterns.ts     # 200+ regex patterns (206 lines)
-│   │   │   │   ├── secret-scanner.ts      # 15+ credential type detection (89 lines)
-│   │   │   │   ├── session-watcher.ts     # JSONL session file monitor (445 lines)
-│   │   │   │   ├── openclaw-config.ts     # Read/write ~/.openclaw/openclaw.json
-│   │   │   │   ├── exec-approvals-config.ts # Exec approvals file setup
-│   │   │   │   ├── paths.ts              # All ~/.safeclaw/ and ~/.openclaw/ path constants
-│   │   │   │   ├── config.ts             # SafeClaw config file I/O + Zod validation
-│   │   │   │   ├── logger.ts             # Pino dual output (console + file)
-│   │   │   │   ├── banner.ts             # ASCII startup banner
-│   │   │   │   └── version.ts            # Build-time version injection
-│   │   │   ├── server/
-│   │   │   │   ├── index.ts              # Fastify + Socket.IO factory
-│   │   │   │   ├── routes.ts             # 23 REST endpoints (238 lines)
-│   │   │   │   └── socket.ts             # Socket.IO handlers (348 lines)
-│   │   │   └── services/
-│   │   │       ├── openclaw-monitor.ts    # Central orchestrator (486 lines)
-│   │   │       ├── exec-approval-service.ts # Command interception/blocklist (539 lines)
-│   │   │       ├── access-control.ts      # Tool group toggles (337 lines)
-│   │   │       └── __tests__/
-│   │   │           ├── exec-approval-service.test.ts  # 730 lines, 46+ tests
-│   │   │           ├── access-control.test.ts         # 699 lines
-│   │   │           └── test-helpers.ts
-│   │   ├── tsup.config.ts    # Build: ESM, Node 20, bundles @safeclaw/shared
-│   │   ├── vitest.config.ts  # Test: node env, forks pool, 10s timeout
-│   │   └── drizzle.config.ts # SQLite at ~/.safeclaw/safeclaw.db
-│   │
-│   └── web/                  # Frontend – React 18, Vite 6, Tailwind 4 (package: "@safeclaw/web")
-│       ├── src/
-│       │   ├── App.tsx       # React Router: 7 routes
-│       │   ├── pages/        # 7 pages (~1,700 lines total)
+│   └── cli/                  # Backend + Frontend (package: "safeclaw")
+│       ├── bin/safeclaw.js   # npx entry (shebang → dist/main.js)
+│       ├── src/                            # Backend source
+│       │   ├── main.ts                    # CLI: start|reset|status|doctor|config|logs
+│       │   ├── interceptor.ts             # Unified activity threat analyzer wrapper
+│       │   ├── commands/                  # 6 commands: start, reset, status, doctor, config, logs
+│       │   ├── db/                        # index.ts (Drizzle singleton), schema.ts (7 tables), migrate.ts
+│       │   ├── lib/                       # 12 utility modules
+│       │   │   ├── openclaw-client.ts     # WebSocket gateway client (846 lines, largest file)
+│       │   │   ├── threat-classifier.ts   # 10 threat category analyzers (553 lines)
+│       │   │   ├── threat-patterns.ts     # 200+ regex patterns (206 lines)
+│       │   │   ├── secret-scanner.ts      # 15+ credential type detection (89 lines)
+│       │   │   ├── session-watcher.ts     # JSONL session file monitor (445 lines)
+│       │   │   ├── openclaw-config.ts     # Read/write ~/.openclaw/openclaw.json
+│       │   │   ├── exec-approvals-config.ts # Exec approvals file setup
+│       │   │   ├── paths.ts              # All ~/.safeclaw/ and ~/.openclaw/ path constants
+│       │   │   ├── config.ts             # SafeClaw config file I/O + Zod validation
+│       │   │   ├── logger.ts             # Pino dual output (console + file)
+│       │   │   ├── banner.ts             # ASCII startup banner
+│       │   │   └── version.ts            # Build-time version injection
+│       │   ├── server/
+│       │   │   ├── index.ts              # Fastify + Socket.IO factory
+│       │   │   ├── routes.ts             # 23 REST endpoints (238 lines)
+│       │   │   └── socket.ts             # Socket.IO handlers (348 lines)
+│       │   └── services/
+│       │       ├── openclaw-monitor.ts    # Central orchestrator (486 lines)
+│       │       ├── exec-approval-service.ts # Command interception/blocklist (539 lines)
+│       │       ├── access-control.ts      # Tool group toggles (337 lines)
+│       │       └── __tests__/
+│       │           ├── exec-approval-service.test.ts  # 730 lines, 46+ tests
+│       │           ├── access-control.test.ts         # 699 lines
+│       │           └── test-helpers.ts
+│       ├── web/                            # Frontend source (React 18, Vite 6, Tailwind 4)
+│       │   ├── index.html                 # Vite entry
+│       │   ├── main.tsx
+│       │   ├── App.tsx                    # React Router: 7 routes
+│       │   ├── index.css
+│       │   ├── pages/                     # 7 pages (~1,700 lines total)
 │       │   │   ├── DashboardPage.tsx       # Stats overview, threat breakdown, recent activity
 │       │   │   ├── InterceptionPage.tsx    # Exec approval UI, restricted patterns, history
 │       │   │   ├── SessionsPage.tsx        # OpenClaw sessions + activity timeline (runId groups)
@@ -70,13 +68,21 @@ safeclaw-monorepo/
 │       │   │   └── ActivityDetails/        # 6 tool-specific renderers + row/panel
 │       │   │       ├── ActivityRow.tsx, ActivityDetailPanel.tsx, ActivityToolRenderer.tsx
 │       │   │       └── renderers/          # File, Shell, Web, Message, Tool, Unknown
-│       │   └── lib/
-│       │       ├── socket.ts              # Typed Socket.IO client
-│       │       ├── securityAnalyzer.ts    # 10 client-side threat rules (instant UI feedback)
-│       │       ├── activityParser.ts      # Raw JSON → structured ParsedActivity
-│       │       ├── activityGrouper.ts     # Group by runId into interactions
-│       │       └── threat-remediation.ts  # Per-category remediation advice
-│       └── vite.config.ts    # Proxies /api + /socket.io to CLI in dev
+│       │   ├── lib/
+│       │   │   ├── socket.ts              # Typed Socket.IO client
+│       │   │   ├── securityAnalyzer.ts    # 10 client-side threat rules (instant UI feedback)
+│       │   │   ├── activityParser.ts      # Raw JSON → structured ParsedActivity
+│       │   │   ├── activityGrouper.ts     # Group by runId into interactions
+│       │   │   └── threat-remediation.ts  # Per-category remediation advice
+│       │   └── static/                    # Favicons and icons
+│       ├── public/                        # Vite build OUTPUT (served by Fastify)
+│       ├── dist/                          # tsup build output
+│       ├── vite.config.ts                 # Vite: root=web/, builds to public/
+│       ├── tsup.config.ts                 # Build: ESM, Node 20, bundles @safeclaw/shared
+│       ├── tsconfig.json                  # Backend TS config (src/ only)
+│       ├── tsconfig.web.json              # Frontend TS config (web/ only)
+│       ├── vitest.config.ts               # Test: node env, forks pool, 10s timeout
+│       └── drizzle.config.ts              # SQLite at ~/.safeclaw/safeclaw.db
 │
 ├── packages/
 │   └── shared/               # Shared types + Zod schemas (package: "@safeclaw/shared")
@@ -122,10 +128,10 @@ safeclaw-monorepo/
 
 ```bash
 pnpm install                    # Install all dependencies
-pnpm build                      # Build all: shared → web → cli (order matters)
+pnpm build                      # Build all: shared → cli (vite build + tsup)
 pnpm build:shared               # Build shared types only
-pnpm build:web                  # Build frontend only
-pnpm build:cli                  # Build CLI only
+pnpm build:web                  # Build frontend only (vite build)
+pnpm build:cli                  # Build backend only (tsup)
 
 pnpm dev:cli                    # Backend with hot reload (tsx watch)
 pnpm dev:web                    # Frontend dev server on :5173 (proxies to CLI)
@@ -140,7 +146,7 @@ cd apps/cli && pnpm db:studio   # Open Drizzle Studio GUI
 
 **Dev mode:** Vite on :5173 proxies `/api` and `/socket.io` to CLI server on :54335. Open `http://localhost:5173`.
 
-**Production:** `pnpm build` copies web assets into `apps/cli/public/`. Then `node apps/cli/bin/safeclaw.js start` serves everything from one port.
+**Production:** `pnpm build` runs `vite build` (outputs to `apps/cli/public/`) then `tsup` (outputs to `apps/cli/dist/`). Then `node apps/cli/bin/safeclaw.js start` serves everything from one port.
 
 **Verification:** `pnpm clean && pnpm build && pnpm typecheck` — if this passes, the project is good.
 
@@ -412,13 +418,13 @@ All types have corresponding Zod schemas in `schemas.ts` with `.passthrough()` f
 3. DB schema in `apps/cli/src/db/schema.ts` (if persistence needed)
 4. REST routes in `apps/cli/src/server/routes.ts`
 5. Socket.IO events in `apps/cli/src/server/socket.ts`
-6. UI in `apps/web/src/pages/` or `apps/web/src/components/`
+6. UI in `apps/cli/web/pages/` or `apps/cli/web/components/`
 7. **Rebuild shared first** (`pnpm build:shared`) before other packages see new types
 
 ### Adding a new page
-1. Create `apps/web/src/pages/NewPage.tsx`
-2. Add route in `apps/web/src/App.tsx`
-3. Add sidebar link in `apps/web/src/components/Sidebar.tsx`
+1. Create `apps/cli/web/pages/NewPage.tsx`
+2. Add route in `apps/cli/web/App.tsx`
+3. Add sidebar link in `apps/cli/web/components/Sidebar.tsx`
 
 ---
 
@@ -441,7 +447,7 @@ pnpm clean && pnpm build && pnpm typecheck
 pnpm test
 ```
 
-**Smoke test:** dev:cli + dev:web → open localhost:5173 → Dashboard loads, sidebar works, no console errors.
+**Smoke test:** `pnpm dev:cli` + `pnpm dev:web` → open localhost:5173 → Dashboard loads, sidebar works, no console errors.
 
 ---
 
@@ -472,7 +478,7 @@ pnpm test
 pnpm install                    # Install deps
 pnpm dev:cli                    # Backend hot reload
 pnpm dev:web                    # Frontend hot reload (:5173)
-pnpm build                      # Build all (shared → web → cli)
+pnpm build                      # Build all (shared → vite + tsup)
 pnpm typecheck                  # Type-check everything
 pnpm test                       # Run test suite
 pnpm clean                      # Remove all artifacts
