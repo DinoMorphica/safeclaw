@@ -13,11 +13,7 @@ import { getDb, schema } from "../db/index.js";
 import { eq, ne, and, sql } from "drizzle-orm";
 import { getSrtStatus } from "../lib/srt-config.js";
 
-function buildLayer(
-  id: string,
-  name: string,
-  checks: SecurityCheck[],
-): SecurityLayer {
+function buildLayer(id: string, name: string, checks: SecurityCheck[]): SecurityLayer {
   const passedCount = checks.filter((c) => c.passed).length;
   const totalCount = checks.length;
   let status: SecurityLayerStatus;
@@ -43,9 +39,7 @@ function checkSandboxLayer(): SecurityLayer {
       id: "sandbox-mode",
       label: "Sandbox mode enabled",
       passed: mode === "all" || mode === "non-main",
-      detail: mode
-        ? `Sandbox mode is "${mode}"`
-        : "Sandbox mode is not configured",
+      detail: mode ? `Sandbox mode is "${mode}"` : "Sandbox mode is not configured",
       severity: "critical",
     },
     {
@@ -83,18 +77,17 @@ function checkFilesystemLayer(): SecurityLayer {
       id: "fs-toggle",
       label: "Filesystem access controlled",
       passed: fsToggle != null && !fsToggle.enabled,
-      detail: fsToggle?.enabled === false
-        ? "Filesystem tool group is disabled"
-        : "Filesystem tool group is enabled (agent has file access)",
+      detail:
+        fsToggle?.enabled === false
+          ? "Filesystem tool group is disabled"
+          : "Filesystem tool group is enabled (agent has file access)",
       severity: "warning",
     },
     {
       id: "fs-workspace",
       label: "Workspace path configured",
       passed: workspace != null && workspace.length > 0,
-      detail: workspace
-        ? `Workspace: ${workspace}`
-        : "No explicit workspace path configured",
+      detail: workspace ? `Workspace: ${workspace}` : "No explicit workspace path configured",
       severity: "info",
     },
     {
@@ -125,18 +118,20 @@ function checkNetworkLayer(): SecurityLayer {
       id: "net-toggle",
       label: "Network access controlled",
       passed: netToggle != null && !netToggle.enabled,
-      detail: netToggle?.enabled === false
-        ? "Network tool group is disabled"
-        : "Network tool group is enabled",
+      detail:
+        netToggle?.enabled === false
+          ? "Network tool group is disabled"
+          : "Network tool group is enabled",
       severity: "warning",
     },
     {
       id: "net-browser",
       label: "Browser disabled",
       passed: browserEnabled === false,
-      detail: browserEnabled === false
-        ? "Browser is disabled"
-        : "Browser is enabled (agent can browse web)",
+      detail:
+        browserEnabled === false
+          ? "Browser is disabled"
+          : "Browser is enabled (agent can browse web)",
       severity: "info",
     },
     {
@@ -161,9 +156,7 @@ function checkNetworkLayer(): SecurityLayer {
 
 async function checkCommandExecLayer(): Promise<SecurityLayer> {
   const accessState = deriveAccessState();
-  const sysToggle = accessState.toggles.find(
-    (t) => t.category === "system_commands",
-  );
+  const sysToggle = accessState.toggles.find((t) => t.category === "system_commands");
   const config = readOpenClawConfig();
   const execSecurity = config?.tools?.exec?.security;
 
@@ -173,18 +166,17 @@ async function checkCommandExecLayer(): Promise<SecurityLayer> {
   const patternTexts = patternRows.map((r) => r.pattern.toLowerCase());
 
   const criticalPatterns = ["sudo", "rm -rf", "chmod", "curl"];
-  const hasCritical = criticalPatterns.some((cp) =>
-    patternTexts.some((pt) => pt.includes(cp)),
-  );
+  const hasCritical = criticalPatterns.some((cp) => patternTexts.some((pt) => pt.includes(cp)));
 
   const checks: SecurityCheck[] = [
     {
       id: "exec-toggle",
       label: "System commands controlled",
       passed: sysToggle != null && !sysToggle.enabled,
-      detail: sysToggle?.enabled === false
-        ? "System commands tool group is disabled"
-        : "System commands tool group is enabled",
+      detail:
+        sysToggle?.enabled === false
+          ? "System commands tool group is disabled"
+          : "System commands tool group is enabled",
       severity: "warning",
     },
     {
@@ -200,9 +192,10 @@ async function checkCommandExecLayer(): Promise<SecurityLayer> {
       id: "exec-patterns",
       label: "Restricted patterns configured",
       passed: patternCount > 0,
-      detail: patternCount > 0
-        ? `${patternCount} restricted pattern(s) in blocklist`
-        : "No restricted patterns — all commands pass through",
+      detail:
+        patternCount > 0
+          ? `${patternCount} restricted pattern(s) in blocklist`
+          : "No restricted patterns — all commands pass through",
       severity: "warning",
     },
     {
@@ -221,9 +214,7 @@ async function checkCommandExecLayer(): Promise<SecurityLayer> {
 
 function checkMcpLayer(): SecurityLayer {
   const accessState = deriveAccessState();
-  const mcpToggle = accessState.toggles.find(
-    (t) => t.category === "mcp_servers",
-  );
+  const mcpToggle = accessState.toggles.find((t) => t.category === "mcp_servers");
   const servers = accessState.mcpServers;
   const config = readOpenClawConfig();
   const denyList = config?.tools?.deny ?? [];
@@ -348,10 +339,7 @@ async function checkThreatMonitoringLayer(): Promise<SecurityLayer> {
     .select({ count: sql<number>`count(*)` })
     .from(schema.agentActivities)
     .where(
-      and(
-        ne(schema.agentActivities.threatLevel, "NONE"),
-        eq(schema.agentActivities.resolved, 1),
-      ),
+      and(ne(schema.agentActivities.threatLevel, "NONE"), eq(schema.agentActivities.resolved, 1)),
     );
 
   const total = totalThreats[0]?.count ?? 0;
@@ -423,9 +411,7 @@ async function checkHumanInLoopLayer(): Promise<SecurityLayer> {
       id: "hitl-active",
       label: "Exec approval system active",
       passed: monitor != null,
-      detail: monitor
-        ? "Exec approval system is running"
-        : "Exec approval system not initialized",
+      detail: monitor ? "Exec approval system is running" : "Exec approval system not initialized",
       severity: "critical",
     },
     {
@@ -461,8 +447,7 @@ async function checkEgressProxyLayer(): Promise<SecurityLayer> {
     process.env.https_proxy
   );
 
-  const noProxy =
-    process.env.NO_PROXY || process.env.no_proxy || "";
+  const noProxy = process.env.NO_PROXY || process.env.no_proxy || "";
   const proxyBypassed = noProxy.trim() === "*";
 
   const srtStatus = getSrtStatus();
@@ -560,18 +545,18 @@ function checkGatewaySecurityLayer(): SecurityLayer {
   const deviceExists = fs.existsSync(OPENCLAW_DEVICE_JSON);
 
   const authMode = (config as Record<string, unknown> | null)?.gateway
-    ? ((config as Record<string, unknown>).gateway as Record<string, unknown>)
-        ?.auth
+    ? ((config as Record<string, unknown>).gateway as Record<string, unknown>)?.auth
       ? (
-          ((config as Record<string, unknown>).gateway as Record<string, unknown>)
-            .auth as Record<string, unknown>
+          ((config as Record<string, unknown>).gateway as Record<string, unknown>).auth as Record<
+            string,
+            unknown
+          >
         )?.mode
       : undefined
     : undefined;
 
   const gwBind = (config as Record<string, unknown> | null)?.gateway
-    ? ((config as Record<string, unknown>).gateway as Record<string, unknown>)
-        ?.bind
+    ? ((config as Record<string, unknown>).gateway as Record<string, unknown>)?.bind
     : undefined;
   const bindLocal =
     gwBind === undefined ||
@@ -581,15 +566,10 @@ function checkGatewaySecurityLayer(): SecurityLayer {
     gwBind === "loopback" ||
     gwBind === "::1";
 
-  const channels = config?.channels as
-    | Record<string, unknown>
-    | undefined;
-  const whatsapp = channels?.whatsapp as
-    | Record<string, unknown>
-    | undefined;
+  const channels = config?.channels as Record<string, unknown> | undefined;
+  const whatsapp = channels?.whatsapp as Record<string, unknown> | undefined;
   const allowFrom = whatsapp?.allowFrom as unknown[] | undefined;
-  const channelRestricted =
-    !whatsapp || (Array.isArray(allowFrom) && allowFrom.length > 0);
+  const channelRestricted = !whatsapp || (Array.isArray(allowFrom) && allowFrom.length > 0);
 
   const checks: SecurityCheck[] = [
     {
@@ -605,9 +585,7 @@ function checkGatewaySecurityLayer(): SecurityLayer {
       id: "gw-auth-mode",
       label: "Gateway authentication enabled",
       passed: authMode != null && authMode !== "",
-      detail: authMode
-        ? `Gateway auth mode: "${authMode}"`
-        : "Gateway auth mode not configured",
+      detail: authMode ? `Gateway auth mode: "${authMode}"` : "Gateway auth mode not configured",
       severity: "critical",
     },
     {
@@ -650,9 +628,7 @@ async function checkSupplyChainLayer(): Promise<SecurityLayer> {
   const patternRows = await db.select().from(schema.restrictedPatterns);
   const patternTexts = patternRows.map((r) => r.pattern.toLowerCase());
   const supplyKeywords = ["npm install", "pip install", "brew install", "curl"];
-  const hasSupplyPattern = supplyKeywords.some((kw) =>
-    patternTexts.some((pt) => pt.includes(kw)),
-  );
+  const hasSupplyPattern = supplyKeywords.some((kw) => patternTexts.some((pt) => pt.includes(kw)));
 
   const config = readOpenClawConfig();
   const execSecurity = config?.tools?.exec?.security;
@@ -794,8 +770,7 @@ export async function computeSecurityPosture(): Promise<SecurityPosture> {
 
   const totalChecks = layers.reduce((sum, l) => sum + l.totalCount, 0);
   const passedChecks = layers.reduce((sum, l) => sum + l.passedCount, 0);
-  const overallScore =
-    totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0;
+  const overallScore = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0;
 
   return {
     layers,

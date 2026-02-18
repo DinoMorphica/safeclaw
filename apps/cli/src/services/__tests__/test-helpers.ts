@@ -75,9 +75,7 @@ export function createMockIO() {
 
 // --- Test request factory ---
 
-export function makeRequest(
-  overrides: Partial<ExecApprovalRequest> = {},
-): ExecApprovalRequest {
+export function makeRequest(overrides: Partial<ExecApprovalRequest> = {}): ExecApprovalRequest {
   return {
     id: overrides.id ?? crypto.randomUUID(),
     command: overrides.command ?? "echo hello",

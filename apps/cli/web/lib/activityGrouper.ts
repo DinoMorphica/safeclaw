@@ -6,9 +6,7 @@ export interface GroupedInteraction {
   runId: string; // Interaction/run identifier
 }
 
-export function groupActivitiesByInteraction(
-  activities: AgentActivity[],
-): GroupedInteraction[] {
+export function groupActivitiesByInteraction(activities: AgentActivity[]): GroupedInteraction[] {
   const groups = new Map<string, AgentActivity[]>();
 
   // Group activities by runId (interaction) — use the field directly on the activity
@@ -25,8 +23,7 @@ export function groupActivitiesByInteraction(
   const interactions = Array.from(groups.entries()).map(([runId, group]) => {
     // Sort group by timestamp chronologically within the interaction
     const sortedActivities = group.sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
 
     return {
@@ -38,12 +35,9 @@ export function groupActivitiesByInteraction(
 
   // Sort interactions by most recent first (newest at the top)
   return interactions.sort(
-    (a, b) =>
-      new Date(b.primary.timestamp).getTime() -
-      new Date(a.primary.timestamp).getTime(),
+    (a, b) => new Date(b.primary.timestamp).getTime() - new Date(a.primary.timestamp).getTime(),
   );
 }
 
 // Keep the old function name for backwards compatibility during migration
 export const groupActivitiesByToolCall = groupActivitiesByInteraction;
-

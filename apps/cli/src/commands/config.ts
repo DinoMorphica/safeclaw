@@ -24,8 +24,7 @@ const SETTABLE_KEYS: Record<
     type: "boolean",
     description: "Auto-open browser on start (true/false)",
     validate: (v) => {
-      if (v !== "true" && v !== "false")
-        return 'Value must be "true" or "false"';
+      if (v !== "true" && v !== "false") return 'Value must be "true" or "false"';
       return null;
     },
   },
@@ -33,8 +32,7 @@ const SETTABLE_KEYS: Record<
     type: "boolean",
     description: "Premium features enabled (true/false)",
     validate: (v) => {
-      if (v !== "true" && v !== "false")
-        return 'Value must be "true" or "false"';
+      if (v !== "true" && v !== "false") return 'Value must be "true" or "false"';
       return null;
     },
   },
@@ -49,8 +47,7 @@ export async function configListCommand(): Promise<void> {
 
   for (const [key, value] of Object.entries(config)) {
     const meta = SETTABLE_KEYS[key];
-    const displayValue =
-      typeof value === "string" ? `"${value}"` : String(value);
+    const displayValue = typeof value === "string" ? `"${value}"` : String(value);
     const settable = meta ? "" : pc.dim(" (read-only)");
     console.log(`  ${pc.cyan(key)}: ${displayValue}${settable}`);
   }
@@ -73,10 +70,7 @@ export async function configGetCommand(key: string): Promise<void> {
   console.log(value);
 }
 
-export async function configSetCommand(
-  key: string,
-  value: string,
-): Promise<void> {
+export async function configSetCommand(key: string, value: string): Promise<void> {
   ensureDataDir();
   const config = readConfig();
 
@@ -87,9 +81,7 @@ export async function configSetCommand(
     } else {
       process.stderr.write(
         pc.red(`Unknown config key: ${key}\n`) +
-          pc.dim(
-            `Settable keys: ${Object.keys(SETTABLE_KEYS).join(", ")}\n`,
-          ),
+          pc.dim(`Settable keys: ${Object.keys(SETTABLE_KEYS).join(", ")}\n`),
       );
     }
     process.exit(1);

@@ -42,7 +42,5 @@ export async function resetCommand(options: ResetOptions): Promise<void> {
 
   resetConfig();
   console.log(pc.green("  Config reset to defaults."));
-  console.log(
-    pc.bold("\nDone.") + " Run " + pc.cyan("safeclaw start") + " to start fresh.",
-  );
+  console.log(pc.bold("\nDone.") + " Run " + pc.cyan("safeclaw start") + " to start fresh.");
 }

@@ -13,16 +13,16 @@ export interface SecurityIndicator {
 // --- Category icon and color mapping ---
 
 const CATEGORY_ICONS: Record<ThreatCategoryId, string> = {
-  "TC-SEC": "🔑",  // Secret Exposure
-  "TC-EXF": "📤",  // Data Exfiltration
-  "TC-INJ": "💉",  // Prompt Injection
-  "TC-DES": "💥",  // Destructive Operation
-  "TC-ESC": "⬆️",  // Privilege Escalation
-  "TC-SUP": "📦",  // Supply Chain Risk
-  "TC-SFA": "📁",  // Sensitive File Access
-  "TC-SYS": "⚙️",  // System Modification
-  "TC-NET": "🌐",  // Suspicious Network
-  "TC-MCP": "🔌",  // MCP/Tool Poisoning
+  "TC-SEC": "🔑", // Secret Exposure
+  "TC-EXF": "📤", // Data Exfiltration
+  "TC-INJ": "💉", // Prompt Injection
+  "TC-DES": "💥", // Destructive Operation
+  "TC-ESC": "⬆️", // Privilege Escalation
+  "TC-SUP": "📦", // Supply Chain Risk
+  "TC-SFA": "📁", // Sensitive File Access
+  "TC-SYS": "⚙️", // System Modification
+  "TC-NET": "🌐", // Suspicious Network
+  "TC-MCP": "🔌", // MCP/Tool Poisoning
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -34,10 +34,14 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 function severityToLevel(severity: string): "critical" | "high" | "medium" | "low" {
   switch (severity) {
-    case "CRITICAL": return "critical";
-    case "HIGH": return "high";
-    case "MEDIUM": return "medium";
-    default: return "low";
+    case "CRITICAL":
+      return "critical";
+    case "HIGH":
+      return "high";
+    case "MEDIUM":
+      return "medium";
+    default:
+      return "low";
   }
 }
 
@@ -195,7 +199,17 @@ function analyzeActivitySecurityLegacy(
   // Rule 10: Secrets detected in content (severity based on secret type)
   if (activity.secretsDetected && activity.secretsDetected.length > 0) {
     const hasCritical = activity.secretsDetected.some((s) =>
-      ["AWS_ACCESS_KEY", "AWS_SECRET_KEY", "OPENAI_API_KEY", "GITHUB_TOKEN", "GITLAB_TOKEN", "PEM_PRIVATE_KEY", "STRIPE_KEY", "SENDGRID_KEY", "TWILIO_KEY"].includes(s),
+      [
+        "AWS_ACCESS_KEY",
+        "AWS_SECRET_KEY",
+        "OPENAI_API_KEY",
+        "GITHUB_TOKEN",
+        "GITLAB_TOKEN",
+        "PEM_PRIVATE_KEY",
+        "STRIPE_KEY",
+        "SENDGRID_KEY",
+        "TWILIO_KEY",
+      ].includes(s),
     );
     indicators.push({
       level: hasCritical ? "critical" : "high",

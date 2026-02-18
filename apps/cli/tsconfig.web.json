@@ -10,7 +10,5 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
   "include": ["web"],
-  "references": [
-    { "path": "../../packages/shared" }
-  ]
+  "references": [{ "path": "../../packages/shared" }]
 }

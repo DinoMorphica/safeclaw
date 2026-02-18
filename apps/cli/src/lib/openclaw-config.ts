@@ -31,7 +31,10 @@ export function writeOpenClawConfig(updates: Partial<OpenClawConfig>): OpenClawC
   return cleaned;
 }
 
-function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+function deepMerge(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+): Record<string, unknown> {
   const result = { ...target };
   for (const key of Object.keys(source)) {
     const srcVal = source[key];

@@ -37,9 +37,7 @@ export function UnknownRenderer({ activity, parsed }: Props) {
       {/* Detail */}
       <div>
         <p className="text-xs text-gray-500 mb-1">Detail:</p>
-        <p className="text-xs text-gray-300 p-2 bg-gray-800 rounded">
-          {activity.detail}
-        </p>
+        <p className="text-xs text-gray-300 p-2 bg-gray-800 rounded">{activity.detail}</p>
       </div>
 
       {/* Parsed Activity Data */}

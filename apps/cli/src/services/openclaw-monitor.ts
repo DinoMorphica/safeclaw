@@ -1,12 +1,6 @@
-import {
-  OpenClawClient,
-  type ParsedActivity,
-} from "../lib/openclaw-client.js";
+import { OpenClawClient, type ParsedActivity } from "../lib/openclaw-client.js";
 import { SessionWatcher, type SessionFileActivity } from "./session-watcher.js";
-import {
-  ExecApprovalService,
-  createExecApprovalService,
-} from "./exec-approval-service.js";
+import { ExecApprovalService, createExecApprovalService } from "./exec-approval-service.js";
 import { ensureDefaults } from "../lib/exec-approvals-config.js";
 import { analyzeActivityThreat } from "../interceptor.js";
 import { getDb, schema } from "../db/index.js";
@@ -56,9 +50,7 @@ export class OpenClawMonitor {
         runId: parsed.runId ?? null,
         contentPreview: null,
         readContentPreview: null,
-      }).catch((err) =>
-        logger.error({ err }, "Failed to handle OpenClaw activity"),
-      );
+      }).catch((err) => logger.error({ err }, "Failed to handle OpenClaw activity"));
     });
 
     this.client.on("sessionStart", (sessionId: string, model?: string) => {
@@ -224,10 +216,7 @@ export class OpenClawMonitor {
     );
   }
 
-  private async handleSessionStart(
-    sessionId: string,
-    model?: string,
-  ): Promise<void> {
+  private async handleSessionStart(sessionId: string, model?: string): Promise<void> {
     const db = getDb();
 
     // Upsert: insert or update if exists
@@ -272,9 +261,7 @@ export class OpenClawMonitor {
     }
   }
 
-  async buildSessionPayload(
-    sessionId: string,
-  ): Promise<OpenClawSession | null> {
+  async buildSessionPayload(sessionId: string): Promise<OpenClawSession | null> {
     const db = getDb();
     const [row] = await db
       .select()
@@ -349,10 +336,7 @@ export class OpenClawMonitor {
     };
   }
 
-  async resolveActivity(
-    activityId: number,
-    resolved: boolean,
-  ): Promise<AgentActivity | null> {
+  async resolveActivity(activityId: number, resolved: boolean): Promise<AgentActivity | null> {
     const db = getDb();
     await db
       .update(schema.agentActivities)
@@ -384,7 +368,9 @@ export class OpenClawMonitor {
       conditions.push(eq(schema.agentActivities.threatLevel, severity) as ReturnType<typeof ne>);
     }
     if (resolved !== undefined) {
-      conditions.push(eq(schema.agentActivities.resolved, resolved ? 1 : 0) as ReturnType<typeof ne>);
+      conditions.push(
+        eq(schema.agentActivities.resolved, resolved ? 1 : 0) as ReturnType<typeof ne>,
+      );
     }
 
     const rows = await db
@@ -397,10 +383,7 @@ export class OpenClawMonitor {
     return rows.map((r) => this.mapRowToActivity(r));
   }
 
-  async getActivities(
-    sessionId?: string,
-    limit = 50,
-  ): Promise<AgentActivity[]> {
+  async getActivities(sessionId?: string, limit = 50): Promise<AgentActivity[]> {
     const db = getDb();
 
     let rows;
@@ -471,9 +454,7 @@ export class OpenClawMonitor {
   }
 }
 
-export function createOpenClawMonitor(
-  io: TypedSocketServer,
-): OpenClawMonitor {
+export function createOpenClawMonitor(io: TypedSocketServer): OpenClawMonitor {
   if (instance) {
     instance.stop();
   }

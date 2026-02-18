@@ -26,15 +26,19 @@ The CLI serves `public/` as static files via `@fastify/static`. If this folder i
 Before publishing, verify:
 
 1. **`apps/cli/public/` has frontend assets:**
+
    ```bash
    ls apps/cli/public/
    ```
+
    Must contain: `index.html`, `assets/`, favicon files.
 
 2. **Version is correct in the bundle:**
+
    ```bash
    grep 'VERSION' apps/cli/dist/main.js | head -1
    ```
+
    Should show the new version string.
 
 3. **License is `AGPL-3.0-only`** in `apps/cli/package.json` (not MIT).
@@ -104,14 +108,14 @@ Defined by the `files` array in `apps/cli/package.json`.
 
 ## Common Mistakes
 
-| Mistake | Symptom | Fix |
-|---------|---------|-----|
-| Build before version bump | Banner shows old version | Always bump first |
-| Publish without web build | 404 on dashboard, "No frontend build" warning | Run full `pnpm build` (includes cp step) |
-| Test inside monorepo | `EUNSUPPORTEDPROTOCOL workspace:*` error | Test from `~/test-safeclaw` or `/tmp` |
-| Use `npm publish` instead of `pnpm publish` | `workspace:*` not resolved in published tarball | Use `pnpm publish` |
-| npx serves cached old version | Old version runs despite new publish | Use `npx safeclaw@<exact-version>` |
-| Forget `--otp` | 403 Forbidden from npm registry | Add `--otp=<code>` flag |
+| Mistake                                     | Symptom                                         | Fix                                      |
+| ------------------------------------------- | ----------------------------------------------- | ---------------------------------------- |
+| Build before version bump                   | Banner shows old version                        | Always bump first                        |
+| Publish without web build                   | 404 on dashboard, "No frontend build" warning   | Run full `pnpm build` (includes cp step) |
+| Test inside monorepo                        | `EUNSUPPORTEDPROTOCOL workspace:*` error        | Test from `~/test-safeclaw` or `/tmp`    |
+| Use `npm publish` instead of `pnpm publish` | `workspace:*` not resolved in published tarball | Use `pnpm publish`                       |
+| npx serves cached old version               | Old version runs despite new publish            | Use `npx safeclaw@<exact-version>`       |
+| Forget `--otp`                              | 403 Forbidden from npm registry                 | Add `--otp=<code>` flag                  |
 
 ## Quick Reference
 

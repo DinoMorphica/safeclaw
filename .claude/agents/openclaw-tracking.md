@@ -11,6 +11,7 @@ SafeClaw tracks OpenClaw AI agent activities using a **dual-source** approach be
 Connects to `ws://127.0.0.1:{port}` (default 18789) using Ed25519 device auth.
 
 **Events received:**
+
 - `agent` with `stream=lifecycle` — session start/end (phase: start/end/error)
 - `agent` with `stream=assistant` — LLM text streaming (skipped, not security-relevant)
 - `chat` — final message delivery (WhatsApp, agent responses)
@@ -19,21 +20,25 @@ Connects to `ws://127.0.0.1:{port}` (default 18789) using Ed25519 device auth.
 - `presence` — online status
 
 **Events NOT received:**
+
 - `agent` with `stream=tool` — tool invocations (file reads, writes, shell commands). These are processed internally by the `[agent/embedded]` subsystem but **never broadcast** to WebSocket clients. This was confirmed via gateway log analysis.
 
 ### Source 2: Session JSONL Files (complete, file-tailed)
 
 OpenClaw stores complete interaction histories at:
+
 ```
 ~/.openclaw/agents/{agentName}/sessions/{sessionId}.jsonl
 ```
 
 Active sessions are listed in:
+
 ```
 ~/.openclaw/agents/{agentName}/sessions/sessions.json
 ```
 
 **JSONL entry types:**
+
 ```jsonl
 {"type":"session","id":"...","timestamp":"...","cwd":"..."}
 {"type":"model_change","id":"...","modelId":"claude-haiku-4-5"}
@@ -67,6 +72,7 @@ The `parentId` chain creates a tree structure. Each `role: "user"` message start
 ## Interaction Grouping
 
 Activities are grouped by `runId`:
+
 - Session watcher: Uses the `id` of the nearest preceding `role: "user"` message
 - Gateway events: Extracts `payload.runId` from chat events
 
@@ -76,17 +82,17 @@ All tool calls between two user messages belong to the same interaction run.
 
 Content from tool results is scanned for:
 
-| Pattern | Type | Severity |
-|---------|------|----------|
-| `AKIA[0-9A-Z]{16}` | AWS_ACCESS_KEY | CRITICAL |
-| `sk-[a-zA-Z0-9]{20,}` | OPENAI_API_KEY | CRITICAL |
-| `ghp_[a-zA-Z0-9]{36}` | GITHUB_TOKEN | CRITICAL |
+| Pattern                        | Type            | Severity |
+| ------------------------------ | --------------- | -------- |
+| `AKIA[0-9A-Z]{16}`             | AWS_ACCESS_KEY  | CRITICAL |
+| `sk-[a-zA-Z0-9]{20,}`          | OPENAI_API_KEY  | CRITICAL |
+| `ghp_[a-zA-Z0-9]{36}`          | GITHUB_TOKEN    | CRITICAL |
 | `-----BEGIN.*PRIVATE KEY-----` | PEM_PRIVATE_KEY | CRITICAL |
-| `[rs]k_(live\|test)_...` | STRIPE_KEY | CRITICAL |
-| `xox[bpars]-...` | SLACK_TOKEN | HIGH |
-| `postgres://...@...` | DATABASE_URL | HIGH |
-| `PASSWORD=...` | PASSWORD_IN_ENV | HIGH |
-| `eyJ...` (JWT) | JWT_TOKEN | MEDIUM |
+| `[rs]k_(live\|test)_...`       | STRIPE_KEY      | CRITICAL |
+| `xox[bpars]-...`               | SLACK_TOKEN     | HIGH     |
+| `postgres://...@...`           | DATABASE_URL    | HIGH     |
+| `PASSWORD=...`                 | PASSWORD_IN_ENV | HIGH     |
+| `eyJ...` (JWT)                 | JWT_TOKEN       | MEDIUM   |
 
 Content is truncated to 10KB before storage.
 

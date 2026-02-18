@@ -27,15 +27,18 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-64 flex-col bg-sidebar border-r border-gray-800">
       <div className="flex h-14 items-center gap-3 px-6 border-b border-gray-800">
-        <img
-          src="/safeclaw_icon.png"
-          alt="SafeClaw"
-          className="h-8 w-8 object-contain"
-        />
+        <img src="/safeclaw_icon.png" alt="SafeClaw" className="h-8 w-8 object-contain" />
         <div className="flex items-center gap-2">
           <span className="text-xl font-bold">
             <span className="text-white">Safe</span>
-            <span className="text-red-500" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.6), 0 0 20px rgba(239, 68, 68, 0.3)" }}>Claw</span>
+            <span
+              className="text-red-500"
+              style={{
+                textShadow: "0 0 8px rgba(239, 68, 68, 0.6), 0 0 20px rgba(239, 68, 68, 0.3)",
+              }}
+            >
+              Claw
+            </span>
           </span>
           <span className="text-xs text-gray-500">v0.1.0</span>
         </div>

@@ -8,7 +8,7 @@ import { registerRoutes } from "./routes.js";
 import { logger } from "../lib/logger.js";
 import { createOpenClawMonitor } from "../services/openclaw-monitor.js";
 
-export async function createAppServer(port: number) {
+export async function createAppServer(_port: number) {
   const app = Fastify({
     logger: false,
   });
@@ -29,18 +29,13 @@ export async function createAppServer(port: number) {
     });
 
     app.setNotFoundHandler(async (request, reply) => {
-      if (
-        request.url.startsWith("/api/") ||
-        request.url.startsWith("/socket.io/")
-      ) {
+      if (request.url.startsWith("/api/") || request.url.startsWith("/socket.io/")) {
         return reply.status(404).send({ error: "Not found" });
       }
       return reply.sendFile("index.html");
     });
   } else {
-    logger.warn(
-      "No frontend build found in public/. Run 'pnpm build:web' first.",
-    );
+    logger.warn("No frontend build found in public/. Run 'pnpm build:web' first.");
   }
 
   await app.ready();

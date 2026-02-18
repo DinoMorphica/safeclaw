@@ -1,8 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import type {
-  ServerToClientEvents,
-  ClientToServerEvents,
-} from "@safeclaw/shared";
+import type { ServerToClientEvents, ClientToServerEvents } from "@safeclaw/shared";
 
 export type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 

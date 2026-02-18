@@ -6,7 +6,7 @@ interface Props {
   parsed: ParsedActivity;
 }
 
-export function WebBrowseRenderer({ activity, parsed }: Props) {
+export function WebBrowseRenderer({ parsed }: Props) {
   const url = parsed.sensitiveFields.url;
   const action = parsed.args.action as string | undefined;
   const result = parsed.result as string | undefined;
@@ -25,9 +25,7 @@ export function WebBrowseRenderer({ activity, parsed }: Props) {
       {action && (
         <div>
           <p className="text-xs text-gray-500 mb-1">Action:</p>
-          <span className="text-xs px-2 py-1 bg-gray-800 rounded text-gray-300">
-            {action}
-          </span>
+          <span className="text-xs px-2 py-1 bg-gray-800 rounded text-gray-300">{action}</span>
         </div>
       )}
 
@@ -68,9 +66,7 @@ export function WebBrowseRenderer({ activity, parsed }: Props) {
       {/* Error indicator */}
       {parsed.isError && (
         <div className="p-2 bg-red-900/20 border border-red-800/50 rounded">
-          <p className="text-xs text-red-400 font-medium">
-            ⚠️ Request failed
-          </p>
+          <p className="text-xs text-red-400 font-medium">⚠️ Request failed</p>
         </div>
       )}
     </div>

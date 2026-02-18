@@ -1,7 +1,13 @@
 // Skill Scanner — static security analysis engine for markdown skill definitions
 // Runs 15 analyzers (SK-* categories) and returns structured findings
 
-import type { ThreatLevel, SkillScanCategoryId, SkillScanFinding, SkillScanResult, SkillCleanResult } from "@safeclaw/shared";
+import type {
+  ThreatLevel,
+  SkillScanCategoryId,
+  SkillScanFinding,
+  SkillScanResult,
+  SkillCleanResult,
+} from "@safeclaw/shared";
 import { scanForSecrets, SECRET_PATTERNS } from "./secret-scanner.js";
 import { EXFILTRATION_URLS, SENSITIVE_PATH_RULES } from "./threat-patterns.js";
 import {
@@ -53,7 +59,10 @@ function runPatternScan(
 
   for (const { pattern, label, severity } of patterns) {
     // Use a fresh regex with global flag for match iteration
-    const globalPattern = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g");
+    const globalPattern = new RegExp(
+      pattern.source,
+      pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g",
+    );
     let match: RegExpExecArray | null;
 
     while ((match = globalPattern.exec(content)) !== null) {
@@ -164,7 +173,8 @@ function scanEmbeddedSecrets(content: string): SkillScanFinding[] {
       severity: "CRITICAL",
       reason: `Embedded credential: ${secretType}`,
       owaspRef: "LLM02",
-      remediation: "Remove all hardcoded credentials. Use environment variables or a secrets manager instead.",
+      remediation:
+        "Remove all hardcoded credentials. Use environment variables or a secrets manager instead.",
     });
   }
   return findings;
@@ -186,7 +196,8 @@ function scanSensitiveFileRefs(content: string): SkillScanFinding[] {
         reason: `Reference to sensitive path: ${label}`,
         evidence: match[0],
         owaspRef: "LLM02",
-        remediation: "Remove references to sensitive files and directories. Skills should not instruct agents to access credentials, keys, or system auth files.",
+        remediation:
+          "Remove references to sensitive files and directories. Skills should not instruct agents to access credentials, keys, or system auth files.",
         lineNumber: getLineNumber(content, match.index),
       });
     }
@@ -293,14 +304,16 @@ function scanSuspiciousStructure(content: string): SkillScanFinding[] {
       categoryName: "Suspicious Structure",
       severity: "MEDIUM",
       reason: `Unusually large skill definition (${content.length.toLocaleString()} characters)`,
-      remediation: "Large skill definitions have more surface area for hidden threats. Consider splitting into smaller, focused skills.",
+      remediation:
+        "Large skill definitions have more surface area for hidden threats. Consider splitting into smaller, focused skills.",
     });
   }
 
   // Imperative instruction density
   const lines = content.split("\n").filter((l) => l.trim().length > 0);
   if (lines.length > 10) {
-    const imperativePattern = /^\s*(?:you\s+(?:must|should|will|need\s+to)|always|never|do\s+not|ensure|make\s+sure|immediately|execute|run|create|write|read|send|post|upload|download|install|delete|remove|modify|change|update)/i;
+    const imperativePattern =
+      /^\s*(?:you\s+(?:must|should|will|need\s+to)|always|never|do\s+not|ensure|make\s+sure|immediately|execute|run|create|write|read|send|post|upload|download|install|delete|remove|modify|change|update)/i;
     const imperativeCount = lines.filter((l) => imperativePattern.test(l)).length;
     const ratio = imperativeCount / lines.length;
 
@@ -310,7 +323,8 @@ function scanSuspiciousStructure(content: string): SkillScanFinding[] {
         categoryName: "Suspicious Structure",
         severity: "MEDIUM",
         reason: `High imperative instruction density (${Math.round(ratio * 100)}% of lines are directives)`,
-        remediation: "Skills with a high density of imperative instructions may be attempting to control agent behavior beyond their stated purpose.",
+        remediation:
+          "Skills with a high density of imperative instructions may be attempting to control agent behavior beyond their stated purpose.",
       });
     }
   }

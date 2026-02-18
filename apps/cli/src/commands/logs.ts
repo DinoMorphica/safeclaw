@@ -16,10 +16,7 @@ export async function logsCommand(options: LogsOptions): Promise<void> {
 
   if (!fs.existsSync(DEBUG_LOG_PATH)) {
     console.log(
-      pc.yellow("No log file found.") +
-        " Run " +
-        pc.cyan("safeclaw start") +
-        " to generate logs.",
+      pc.yellow("No log file found.") + " Run " + pc.cyan("safeclaw start") + " to generate logs.",
     );
     return;
   }
@@ -41,9 +38,7 @@ async function tailLogs(lineCount: number): Promise<void> {
     return;
   }
 
-  console.log(
-    pc.dim(`Showing last ${tail.length} lines from ${DEBUG_LOG_PATH}\n`),
-  );
+  console.log(pc.dim(`Showing last ${tail.length} lines from ${DEBUG_LOG_PATH}\n`));
   for (const line of tail) {
     process.stdout.write(line + "\n");
   }
@@ -61,9 +56,7 @@ async function followLogs(): Promise<void> {
     }
   }
 
-  let position = fs.existsSync(DEBUG_LOG_PATH)
-    ? fs.statSync(DEBUG_LOG_PATH).size
-    : 0;
+  let position = fs.existsSync(DEBUG_LOG_PATH) ? fs.statSync(DEBUG_LOG_PATH).size : 0;
 
   const watcher = fs.watch(DEBUG_LOG_PATH, () => {
     try {

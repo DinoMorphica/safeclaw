@@ -9,10 +9,7 @@ import type {
   OpenClawAllowlistEntry,
 } from "../lib/openclaw-client.js";
 import type { TypedSocketServer } from "../server/socket.js";
-import type {
-  ExecApprovalEntry,
-  ExecDecision,
-} from "@safeclaw/shared";
+import type { ExecApprovalEntry, ExecDecision } from "@safeclaw/shared";
 
 const DEFAULT_TIMEOUT_MS = 600_000; // 10 minutes
 
@@ -36,21 +33,35 @@ export function matchesPattern(command: string, pattern: string): boolean {
 }
 
 const NETWORK_BINARIES: ReadonlySet<string> = new Set([
-  "curl", "wget", "httpie", "http",
-  "ssh", "scp", "sftp",
-  "nc", "ncat", "netcat",
-  "dig", "nslookup", "host",
-  "ping", "traceroute", "tracepath", "mtr",
-  "telnet", "ftp", "lftp",
-  "rsync", "socat", "nmap",
+  "curl",
+  "wget",
+  "httpie",
+  "http",
+  "ssh",
+  "scp",
+  "sftp",
+  "nc",
+  "ncat",
+  "netcat",
+  "dig",
+  "nslookup",
+  "host",
+  "ping",
+  "traceroute",
+  "tracepath",
+  "mtr",
+  "telnet",
+  "ftp",
+  "lftp",
+  "rsync",
+  "socat",
+  "nmap",
 ]);
 
 export function isNetworkCommand(command: string): boolean {
   const firstToken = command.trim().split(/\s+/)[0];
   if (!firstToken) return false;
-  const basename = firstToken.includes("/")
-    ? firstToken.split("/").pop()!
-    : firstToken;
+  const basename = firstToken.includes("/") ? firstToken.split("/").pop()! : firstToken;
   return NETWORK_BINARIES.has(basename.toLowerCase());
 }
 
@@ -62,11 +73,7 @@ export class ExecApprovalService {
   /** In-memory cache of restricted patterns, loaded from DB on init */
   private restrictedPatterns: string[] = [];
 
-  constructor(
-    client: OpenClawClient,
-    io: TypedSocketServer,
-    timeoutMs = DEFAULT_TIMEOUT_MS,
-  ) {
+  constructor(client: OpenClawClient, io: TypedSocketServer, timeoutMs = DEFAULT_TIMEOUT_MS) {
     this.client = client;
     this.io = io;
     this.timeoutMs = timeoutMs;
@@ -109,9 +116,7 @@ export class ExecApprovalService {
       if (isNetworkCommand(request.command)) {
         try {
           const accessState = deriveAccessState();
-          const networkToggle = accessState.toggles.find(
-            (t) => t.category === "network",
-          );
+          const networkToggle = accessState.toggles.find((t) => t.category === "network");
           if (networkToggle && !networkToggle.enabled) {
             this.resolveToGateway(request.id, "deny");
             const now = new Date();
@@ -164,10 +169,7 @@ export class ExecApprovalService {
       this.persistApproval(entry, null);
       this.io.emit("safeclaw:execApprovalResolved", entry);
 
-      logger.debug(
-        { command: request.command },
-        "Command auto-approved (not restricted)",
-      );
+      logger.debug({ command: request.command }, "Command auto-approved (not restricted)");
       return;
     }
 
@@ -215,10 +217,7 @@ export class ExecApprovalService {
   handleDecision(approvalId: string, decision: ExecDecision): void {
     const pending = this.pending.get(approvalId);
     if (!pending) {
-      logger.warn(
-        { approvalId },
-        "Decision for unknown or already-resolved approval",
-      );
+      logger.warn({ approvalId }, "Decision for unknown or already-resolved approval");
       return;
     }
 
@@ -240,10 +239,7 @@ export class ExecApprovalService {
 
     this.io.emit("safeclaw:execApprovalResolved", entry);
 
-    logger.info(
-      { command: entry.command, decision, approvalId },
-      "Exec approval decided by user",
-    );
+    logger.info({ command: entry.command, decision, approvalId }, "Exec approval decided by user");
   }
 
   // --- Timeout handling ---
@@ -264,32 +260,20 @@ export class ExecApprovalService {
 
     this.io.emit("safeclaw:execApprovalResolved", entry);
 
-    logger.info(
-      { command: entry.command, approvalId },
-      "Exec approval auto-denied (timeout)",
-    );
+    logger.info({ command: entry.command, approvalId }, "Exec approval auto-denied (timeout)");
   }
 
   // --- Gateway communication ---
 
-  private resolveToGateway(
-    approvalId: string,
-    decision: ExecDecision,
-  ): void {
+  private resolveToGateway(approvalId: string, decision: ExecDecision): void {
     this.client.resolveExecApproval(approvalId, decision).catch((err) => {
-      logger.error(
-        { err, approvalId, decision },
-        "Failed to send decision to gateway",
-      );
+      logger.error({ err, approvalId, decision }, "Failed to send decision to gateway");
     });
   }
 
   // --- Database persistence ---
 
-  private persistApproval(
-    entry: ExecApprovalEntry,
-    matchedPattern: string | null,
-  ): void {
+  private persistApproval(entry: ExecApprovalEntry, matchedPattern: string | null): void {
     try {
       const db = getDb();
       db.insert(schema.execApprovals)
@@ -324,10 +308,7 @@ export class ExecApprovalService {
         .where(eq(schema.execApprovals.id, entry.id))
         .run();
     } catch (err) {
-      logger.error(
-        { err, id: entry.id },
-        "Failed to update exec approval decision",
-      );
+      logger.error({ err, id: entry.id }, "Failed to update exec approval decision");
     }
   }
 
@@ -367,10 +348,7 @@ export class ExecApprovalService {
 
       // Sync: remove matching entries from OpenClaw's allowlist
       this.syncRemoveFromOpenClawAllowlist(trimmed).catch((err) => {
-        logger.error(
-          { err, pattern: trimmed },
-          "Failed to sync pattern to OpenClaw allowlist",
-        );
+        logger.error({ err, pattern: trimmed }, "Failed to sync pattern to OpenClaw allowlist");
       });
 
       logger.info({ pattern: trimmed }, "Added restricted command pattern");
@@ -380,9 +358,7 @@ export class ExecApprovalService {
   }
 
   removeRestrictedPattern(pattern: string): string[] {
-    this.restrictedPatterns = this.restrictedPatterns.filter(
-      (p) => p !== pattern,
-    );
+    this.restrictedPatterns = this.restrictedPatterns.filter((p) => p !== pattern);
 
     // Remove from database
     try {
@@ -418,28 +394,19 @@ export class ExecApprovalService {
     const firstToken = restrictedPattern.split(/\s+/)[0].replace(/\*+$/, "");
     if (firstToken) {
       const entryBasename = path.basename(entry.pattern);
-      if (
-        entryBasename === firstToken ||
-        entryBasename.startsWith(firstToken)
-      ) {
+      if (entryBasename === firstToken || entryBasename.startsWith(firstToken)) {
         return true;
       }
       if (entry.lastResolvedPath) {
         const resolvedBasename = path.basename(entry.lastResolvedPath);
-        if (
-          resolvedBasename === firstToken ||
-          resolvedBasename.startsWith(firstToken)
-        ) {
+        if (resolvedBasename === firstToken || resolvedBasename.startsWith(firstToken)) {
           return true;
         }
       }
     }
 
     // Strategy 2: match lastUsedCommand against the full glob
-    if (
-      entry.lastUsedCommand &&
-      matchesPattern(entry.lastUsedCommand, restrictedPattern)
-    ) {
+    if (entry.lastUsedCommand && matchesPattern(entry.lastUsedCommand, restrictedPattern)) {
       return true;
     }
 
@@ -455,10 +422,7 @@ export class ExecApprovalService {
    * Remove entries from OpenClaw's exec-approvals allowlist that match
    * the given restricted pattern. Uses optimistic locking via the gateway.
    */
-  private async syncRemoveFromOpenClawAllowlist(
-    pattern: string,
-    maxRetries = 2,
-  ): Promise<void> {
+  private async syncRemoveFromOpenClawAllowlist(pattern: string, maxRetries = 2): Promise<void> {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const result = await this.client.getExecApprovals();
@@ -477,8 +441,7 @@ export class ExecApprovalService {
 
             const before = agent.allowlist.length;
             agent.allowlist = agent.allowlist.filter(
-              (entry) =>
-                !this.allowlistEntryMatchesRestriction(entry, pattern),
+              (entry) => !this.allowlistEntryMatchesRestriction(entry, pattern),
             );
             const removed = before - agent.allowlist.length;
 
@@ -499,20 +462,14 @@ export class ExecApprovalService {
 
         // Optimistic lock failed — retry
         if (attempt < maxRetries) {
-          logger.warn(
-            { attempt, pattern },
-            "Optimistic lock conflict, retrying sync",
-          );
+          logger.warn({ attempt, pattern }, "Optimistic lock conflict, retrying sync");
         }
       } catch (err) {
         logger.error({ err, pattern, attempt }, "Sync attempt failed");
         if (attempt >= maxRetries) return;
       }
     }
-    logger.error(
-      { pattern },
-      "Exhausted retries for OpenClaw allowlist sync",
-    );
+    logger.error({ pattern }, "Exhausted retries for OpenClaw allowlist sync");
   }
 
   broadcastPatterns(): void {

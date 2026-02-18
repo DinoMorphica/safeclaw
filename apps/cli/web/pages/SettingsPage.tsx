@@ -87,18 +87,14 @@ export function SettingsPage() {
                   )}
                 </div>
               </div>
-              {portError && (
-                <p className="text-xs text-danger -mt-2">{portError}</p>
-              )}
+              {portError && <p className="text-xs text-danger -mt-2">{portError}</p>}
               {portSaved && (
                 <p className="text-xs text-warning -mt-2">
                   Port updated. Restart SafeClaw for changes to take effect.
                 </p>
               )}
               <div className="flex items-center justify-between py-2 border-b border-gray-800">
-                <span className="text-sm text-gray-400">
-                  Auto-open browser
-                </span>
+                <span className="text-sm text-gray-400">Auto-open browser</span>
                 <button
                   type="button"
                   onClick={toggleAutoOpen}
@@ -108,9 +104,7 @@ export function SettingsPage() {
                 >
                   <div
                     className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      config.autoOpenBrowser
-                        ? "translate-x-5"
-                        : "translate-x-0"
+                      config.autoOpenBrowser ? "translate-x-5" : "translate-x-0"
                     }`}
                   />
                 </button>
@@ -121,15 +115,9 @@ export function SettingsPage() {
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
             <h3 className="text-sm font-medium text-gray-200 mb-4">Account</h3>
             <div className="space-y-3">
-              <SettingRow
-                label="Plan"
-                value={config.premium ? "Premium" : "Free"}
-              />
+              <SettingRow label="Plan" value={config.premium ? "Premium" : "Free"} />
               <SettingRow label="Version" value={config.version} />
-              <SettingRow
-                label="User ID"
-                value={config.userId ?? "Not set"}
-              />
+              <SettingRow label="User ID" value={config.userId ?? "Not set"} />
             </div>
           </div>
         </div>

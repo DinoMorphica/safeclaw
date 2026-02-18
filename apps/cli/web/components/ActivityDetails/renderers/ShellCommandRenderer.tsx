@@ -10,8 +10,7 @@ export function ShellCommandRenderer({ activity, parsed }: Props) {
   const command = parsed.sensitiveFields.command;
   const isDangerous =
     command &&
-    (/\bsudo\b/i.test(command) ||
-      /(rm\s+-+[rfRF]|dd\s+(if|of)=|mkfs\.|format\s)/i.test(command));
+    (/\bsudo\b/i.test(command) || /(rm\s+-+[rfRF]|dd\s+(if|of)=|mkfs\.|format\s)/i.test(command));
 
   const result = parsed.result as string | undefined;
   const cwd = parsed.args.cwd as string | undefined;
@@ -23,15 +22,10 @@ export function ShellCommandRenderer({ activity, parsed }: Props) {
       {/* Secrets Warning Banner */}
       {activity.secretsDetected && activity.secretsDetected.length > 0 && (
         <div className="p-3 bg-red-900/30 border border-red-700 rounded">
-          <p className="text-sm font-semibold text-red-300 mb-1">
-            Secrets Detected in Output
-          </p>
+          <p className="text-sm font-semibold text-red-300 mb-1">Secrets Detected in Output</p>
           <div className="flex flex-wrap gap-1">
             {activity.secretsDetected.map((secret, i) => (
-              <span
-                key={i}
-                className="px-2 py-0.5 text-xs bg-red-800/50 text-red-200 rounded"
-              >
+              <span key={i} className="px-2 py-0.5 text-xs bg-red-800/50 text-red-200 rounded">
                 {secret}
               </span>
             ))}
@@ -44,9 +38,7 @@ export function ShellCommandRenderer({ activity, parsed }: Props) {
         <p className="text-xs text-gray-500 mb-1">Command:</p>
         <code
           className={`text-sm block p-3 bg-gray-800 rounded font-mono break-all ${
-            isDangerous
-              ? "text-red-300 border border-red-800/50"
-              : "text-gray-200"
+            isDangerous ? "text-red-300 border border-red-800/50" : "text-gray-200"
           }`}
         >
           {command || "unknown"}
@@ -76,14 +68,8 @@ export function ShellCommandRenderer({ activity, parsed }: Props) {
       {/* Error indicator */}
       {parsed.isError && (
         <div className="p-2 bg-red-900/20 border border-red-800/50 rounded">
-          <p className="text-xs text-red-400 font-medium">
-            ⚠️ Command execution failed
-          </p>
-          {result && (
-            <pre className="text-xs mt-2 text-red-300 whitespace-pre-wrap">
-              {result}
-            </pre>
-          )}
+          <p className="text-xs text-red-400 font-medium">⚠️ Command execution failed</p>
+          {result && <pre className="text-xs mt-2 text-red-300 whitespace-pre-wrap">{result}</pre>}
         </div>
       )}
 

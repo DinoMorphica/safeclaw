@@ -28,7 +28,7 @@ const ACTIVITY_ICONS: Record<ActivityType, string> = {
   unknown: "?",
 };
 
-const ACTIVITY_LABELS: Record<ActivityType, string> = {
+const _ACTIVITY_LABELS: Record<ActivityType, string> = {
   file_read: "File Read",
   file_write: "File Write",
   shell_command: "Shell",
@@ -46,10 +46,7 @@ interface Props {
 }
 
 export function ActivityRow({ activity, phases, expanded, onToggle }: Props) {
-  const parsed = useMemo(
-    () => parseRawPayload(activity.rawPayload),
-    [activity.rawPayload],
-  );
+  const parsed = useMemo(() => parseRawPayload(activity.rawPayload), [activity.rawPayload]);
 
   // Count unique activity types in this interaction
   const activityCount = phases.length;
@@ -61,11 +58,7 @@ export function ActivityRow({ activity, phases, expanded, onToggle }: Props) {
       className="w-full text-left flex items-center gap-2 py-1.5 px-2 rounded hover:bg-gray-800/50 transition-colors cursor-pointer group"
     >
       {/* Expand toggle */}
-      <span
-        className={`text-gray-400 transition-transform ${expanded ? "rotate-90" : ""}`}
-      >
-        ▶
-      </span>
+      <span className={`text-gray-400 transition-transform ${expanded ? "rotate-90" : ""}`}>▶</span>
 
       {/* Icon */}
       <span
@@ -75,23 +68,17 @@ export function ActivityRow({ activity, phases, expanded, onToggle }: Props) {
       </span>
 
       {/* Threat dot */}
-      <span
-        className={`w-1.5 h-1.5 rounded-full ${THREAT_COLORS[activity.threatLevel]}`}
-      />
+      <span className={`w-1.5 h-1.5 rounded-full ${THREAT_COLORS[activity.threatLevel]}`} />
 
       {/* Interaction label */}
-      <span className="text-xs text-gray-500 shrink-0">
-        Interaction
-      </span>
+      <span className="text-xs text-gray-500 shrink-0">Interaction</span>
 
       {/* Detail with run ID and activity count */}
       <span className="text-xs text-gray-300 flex-1 truncate font-mono flex items-center gap-1">
         {parsed.runId && parsed.runId !== "" && (
           <span className="text-gray-500">[{parsed.runId.slice(0, 8)}]</span>
         )}
-        {activityCount > 1 && (
-          <span className="text-gray-600">({activityCount} activities)</span>
-        )}
+        {activityCount > 1 && <span className="text-gray-600">({activityCount} activities)</span>}
         <span>{activity.detail}</span>
       </span>
 

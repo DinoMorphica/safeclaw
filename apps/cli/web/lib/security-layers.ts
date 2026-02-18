@@ -11,8 +11,7 @@ export interface SecurityLayerMeta {
 export const SECURITY_LAYER_META: Record<string, SecurityLayerMeta> = {
   sandbox: {
     name: "Sandbox Isolation",
-    description:
-      "Run the agent in an isolated environment with filesystem and network boundaries",
+    description: "Run the agent in an isolated environment with filesystem and network boundaries",
     icon: "Box",
     actionPath: "/access#sandbox",
     actionLabel: "Configure in Access Control",
@@ -22,8 +21,7 @@ export const SECURITY_LAYER_META: Record<string, SecurityLayerMeta> = {
   },
   filesystem: {
     name: "Filesystem Access",
-    description:
-      "Control which files and directories the agent can read and write",
+    description: "Control which files and directories the agent can read and write",
     icon: "FolderLock",
     actionPath: "/access",
     actionLabel: "Configure in Access Control",
@@ -33,8 +31,7 @@ export const SECURITY_LAYER_META: Record<string, SecurityLayerMeta> = {
   },
   network: {
     name: "Network & Egress Control",
-    description:
-      "Prevent unauthorized data exfiltration and outbound connections",
+    description: "Prevent unauthorized data exfiltration and outbound connections",
     icon: "Globe",
     actionPath: "/access",
     actionLabel: "Configure in Access Control",
@@ -44,8 +41,7 @@ export const SECURITY_LAYER_META: Record<string, SecurityLayerMeta> = {
   },
   exec: {
     name: "Command Execution Controls",
-    description:
-      "Restrict which shell commands the agent can execute on the host system",
+    description: "Restrict which shell commands the agent can execute on the host system",
     icon: "Terminal",
     actionPath: "/interception",
     actionLabel: "Configure in Command Interception",
@@ -55,8 +51,7 @@ export const SECURITY_LAYER_META: Record<string, SecurityLayerMeta> = {
   },
   mcp: {
     name: "MCP Server Security",
-    description:
-      "Control which MCP servers and tools the agent can access",
+    description: "Control which MCP servers and tools the agent can access",
     icon: "Plug",
     actionPath: "/access",
     actionLabel: "Configure in Access Control",
@@ -88,8 +83,7 @@ export const SECURITY_LAYER_META: Record<string, SecurityLayerMeta> = {
   },
   secrets: {
     name: "Secret & Credential Protection",
-    description:
-      "Detect and prevent credential exposure in agent activities",
+    description: "Detect and prevent credential exposure in agent activities",
     icon: "KeyRound",
     actionPath: "/threats",
     actionLabel: "Review in Threat Center",
@@ -132,8 +126,7 @@ export const SECURITY_LAYER_META: Record<string, SecurityLayerMeta> = {
   },
   "human-in-loop": {
     name: "Human-in-the-Loop Controls",
-    description:
-      "Ensure critical operations require human approval before execution",
+    description: "Ensure critical operations require human approval before execution",
     icon: "UserCheck",
     actionPath: "/interception",
     actionLabel: "Configure in Command Interception",

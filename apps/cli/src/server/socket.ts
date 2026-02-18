@@ -1,16 +1,17 @@
 import { Server as SocketIOServer } from "socket.io";
 import type { Server as HttpServer } from "node:http";
-import type {
-  ServerToClientEvents,
-  ClientToServerEvents,
-} from "@safeclaw/shared";
+import type { ServerToClientEvents, ClientToServerEvents } from "@safeclaw/shared";
 import { getDb, schema } from "../db/index.js";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 import { readConfig, writeConfig } from "../lib/config.js";
 import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.js";
 import { getOpenClawMonitor } from "../services/openclaw-monitor.js";
-import { deriveAccessState, applyAccessToggle, applyMcpServerToggle } from "../services/access-control.js";
+import {
+  deriveAccessState,
+  applyAccessToggle,
+  applyMcpServerToggle,
+} from "../services/access-control.js";
 import {
   getSrtStatus,
   toggleSrt,
@@ -21,10 +22,7 @@ import {
   updateSrtSettings,
 } from "../lib/srt-config.js";
 
-export type TypedSocketServer = SocketIOServer<
-  ClientToServerEvents,
-  ServerToClientEvents
->;
+export type TypedSocketServer = SocketIOServer<ClientToServerEvents, ServerToClientEvents>;
 
 let io: TypedSocketServer | null = null;
 
@@ -34,15 +32,12 @@ export function getIO(): TypedSocketServer {
 }
 
 export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
-  io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(
-    httpServer,
-    {
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-      },
+  io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
     },
-  );
+  });
 
   io.on("connection", (socket) => {
     logger.info(`Client connected: ${socket.id}`);
@@ -102,9 +97,11 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
         resolvedThreatBreakdown: {
           NONE: allActivities.filter((a) => a.threatLevel === "NONE" && a.resolved === 1).length,
           LOW: allActivities.filter((a) => a.threatLevel === "LOW" && a.resolved === 1).length,
-          MEDIUM: allActivities.filter((a) => a.threatLevel === "MEDIUM" && a.resolved === 1).length,
+          MEDIUM: allActivities.filter((a) => a.threatLevel === "MEDIUM" && a.resolved === 1)
+            .length,
           HIGH: allActivities.filter((a) => a.threatLevel === "HIGH" && a.resolved === 1).length,
-          CRITICAL: allActivities.filter((a) => a.threatLevel === "CRITICAL" && a.resolved === 1).length,
+          CRITICAL: allActivities.filter((a) => a.threatLevel === "CRITICAL" && a.resolved === 1)
+            .length,
         },
         threatDetectionRate: {
           activitiesWithThreats: allActivities.filter((a) => a.threatLevel !== "NONE").length,
@@ -139,12 +136,7 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
           id: updated.id,
           command: updated.command,
           status: updated.status as "ALLOWED" | "BLOCKED" | "PENDING",
-          threatLevel: updated.threatLevel as
-            | "NONE"
-            | "LOW"
-            | "MEDIUM"
-            | "HIGH"
-            | "CRITICAL",
+          threatLevel: updated.threatLevel as "NONE" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
           timestamp: updated.timestamp,
           sessionId: updated.sessionId,
           decisionBy: updated.decisionBy,
@@ -165,12 +157,7 @@ export function setupSocketIO(httpServer: HttpServer): TypedSocketServer {
           id: cmd.id,
           command: cmd.command,
           status: cmd.status as "ALLOWED" | "BLOCKED" | "PENDING",
-          threatLevel: cmd.threatLevel as
-            | "NONE"
-            | "LOW"
-            | "MEDIUM"
-            | "HIGH"
-            | "CRITICAL",
+          threatLevel: cmd.threatLevel as "NONE" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
           timestamp: cmd.timestamp,
           sessionId: cmd.sessionId,
           decisionBy: cmd.decisionBy,

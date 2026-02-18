@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { socket } from "../lib/socket";
 import { getRemediation } from "../lib/threat-remediation";
-import type { AgentActivity, ThreatLevel } from "@safeclaw/shared";
+import type { AgentActivity } from "@safeclaw/shared";
 
 const THREAT_COLORS: Record<string, string> = {
   CRITICAL: "text-red-400",
@@ -103,9 +103,7 @@ export function ThreatsPage() {
 
   useEffect(() => {
     const handleThreatResolved = (updated: AgentActivity) => {
-      setThreats((prev) =>
-        prev.map((t) => (t.id === updated.id ? updated : t)),
-      );
+      setThreats((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     };
     const handleNewActivity = (activity: AgentActivity) => {
       if (activity.threatLevel !== "NONE") {
@@ -125,29 +123,21 @@ export function ThreatsPage() {
 
   const filteredThreats = useMemo(() => {
     return threats
-      .filter(
-        (t) => severityFilter === "ALL" || t.threatLevel === severityFilter,
-      )
+      .filter((t) => severityFilter === "ALL" || t.threatLevel === severityFilter)
       .filter((t) => {
         if (resolvedFilter === "resolved") return t.resolved;
         if (resolvedFilter === "unresolved") return !t.resolved;
         return true;
       })
-      .sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      );
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [threats, severityFilter, resolvedFilter]);
 
-  const handleToggleResolve = useCallback(
-    (activityId: number, currentResolved: boolean) => {
-      socket.emit("safeclaw:resolveActivity", {
-        activityId,
-        resolved: !currentResolved,
-      });
-    },
-    [],
-  );
+  const handleToggleResolve = useCallback((activityId: number, currentResolved: boolean) => {
+    socket.emit("safeclaw:resolveActivity", {
+      activityId,
+      resolved: !currentResolved,
+    });
+  }, []);
 
   const unresolvedCount = threats.filter((t) => !t.resolved).length;
   const resolvedCount = threats.filter((t) => t.resolved).length;
@@ -208,15 +198,21 @@ export function ThreatsPage() {
       {/* Summary bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="rounded-lg border border-gray-800 bg-gray-900 p-3 text-center">
-          <p className="text-2xl font-bold text-red-400">{threats.filter((t) => t.threatLevel === "CRITICAL").length}</p>
+          <p className="text-2xl font-bold text-red-400">
+            {threats.filter((t) => t.threatLevel === "CRITICAL").length}
+          </p>
           <p className="text-xs text-gray-500">Critical</p>
         </div>
         <div className="rounded-lg border border-gray-800 bg-gray-900 p-3 text-center">
-          <p className="text-2xl font-bold text-orange-400">{threats.filter((t) => t.threatLevel === "HIGH").length}</p>
+          <p className="text-2xl font-bold text-orange-400">
+            {threats.filter((t) => t.threatLevel === "HIGH").length}
+          </p>
           <p className="text-xs text-gray-500">High</p>
         </div>
         <div className="rounded-lg border border-gray-800 bg-gray-900 p-3 text-center">
-          <p className="text-2xl font-bold text-yellow-400">{threats.filter((t) => t.threatLevel === "MEDIUM").length}</p>
+          <p className="text-2xl font-bold text-yellow-400">
+            {threats.filter((t) => t.threatLevel === "MEDIUM").length}
+          </p>
           <p className="text-xs text-gray-500">Medium</p>
         </div>
         <div className="rounded-lg border border-gray-800 bg-gray-900 p-3 text-center">
@@ -238,11 +234,7 @@ export function ThreatsPage() {
               key={threat.id}
               threat={threat}
               expanded={expandedThreat === threat.id}
-              onToggle={() =>
-                setExpandedThreat((prev) =>
-                  prev === threat.id ? null : threat.id,
-                )
-              }
+              onToggle={() => setExpandedThreat((prev) => (prev === threat.id ? null : threat.id))}
               onToggleResolve={handleToggleResolve}
             />
           ))}
@@ -276,9 +268,7 @@ function ThreatCard({
       >
         {/* Expand arrow */}
         <span
-          className={`text-gray-500 text-xs transition-transform ${
-            expanded ? "rotate-90" : ""
-          }`}
+          className={`text-gray-500 text-xs transition-transform ${expanded ? "rotate-90" : ""}`}
         >
           &#9654;
         </span>
@@ -308,9 +298,7 @@ function ThreatCard({
         </div>
 
         {/* Detail text */}
-        <span className="text-xs text-gray-300 flex-1 truncate">
-          {threat.detail}
-        </span>
+        <span className="text-xs text-gray-300 flex-1 truncate">{threat.detail}</span>
 
         {/* Timestamp */}
         <span className="text-xs text-gray-600 flex-shrink-0">
@@ -385,8 +373,7 @@ function ThreatCard({
                 <div
                   key={i}
                   className={`p-3 rounded border ${
-                    THREAT_BG_COLORS[finding.severity] ??
-                    "bg-gray-800 border-gray-700"
+                    THREAT_BG_COLORS[finding.severity] ?? "bg-gray-800 border-gray-700"
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -396,9 +383,7 @@ function ThreatCard({
                     <span className="text-xs font-medium text-gray-300">
                       {finding.categoryName}
                     </span>
-                    <span
-                      className={`text-xs font-medium ${THREAT_COLORS[finding.severity]}`}
-                    >
+                    <span className={`text-xs font-medium ${THREAT_COLORS[finding.severity]}`}>
                       {finding.severity}
                     </span>
                     {finding.owaspRef && (
@@ -407,15 +392,11 @@ function ThreatCard({
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-300 mb-1">
-                    {finding.reason}
-                  </p>
+                  <p className="text-xs text-gray-300 mb-1">{finding.reason}</p>
                   {finding.evidence && (
                     <p className="text-xs text-gray-500 mb-2">
                       <span className="text-gray-600">Evidence:</span>{" "}
-                      <code className="bg-gray-800 px-1 rounded">
-                        {finding.evidence}
-                      </code>
+                      <code className="bg-gray-800 px-1 rounded">{finding.evidence}</code>
                     </p>
                   )}
                   {/* Remediation suggestion */}
@@ -423,22 +404,16 @@ function ThreatCard({
                     <p className="text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
                       Recommended Action
                     </p>
-                    <p className="text-xs text-gray-300">
-                      {remed.defaultAdvice}
-                    </p>
+                    <p className="text-xs text-gray-300">{remed.defaultAdvice}</p>
                     {remed.contextAdvice && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {remed.contextAdvice}
-                      </p>
+                      <p className="text-xs text-gray-500 mt-1">{remed.contextAdvice}</p>
                     )}
                   </div>
                 </div>
               );
             })
           ) : (
-            <p className="text-xs text-gray-500">
-              No detailed findings available.
-            </p>
+            <p className="text-xs text-gray-500">No detailed findings available.</p>
           )}
 
           {/* Activity details */}
@@ -448,18 +423,12 @@ function ThreatCard({
             </span>
             {threat.toolName && (
               <span>
-                Tool:{" "}
-                <span className="text-gray-400 font-mono">
-                  {threat.toolName}
-                </span>
+                Tool: <span className="text-gray-400 font-mono">{threat.toolName}</span>
               </span>
             )}
             {threat.targetPath && (
               <span>
-                Path:{" "}
-                <span className="text-gray-400 font-mono">
-                  {threat.targetPath}
-                </span>
+                Path: <span className="text-gray-400 font-mono">{threat.targetPath}</span>
               </span>
             )}
           </div>

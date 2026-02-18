@@ -6,7 +6,7 @@ interface Props {
   parsed: ParsedActivity;
 }
 
-export function MessageRenderer({ activity, parsed }: Props) {
+export function MessageRenderer({ parsed }: Props) {
   const recipient = parsed.sensitiveFields.recipient;
   const channel = parsed.args.channel as string | undefined;
   const provider = parsed.args.provider as string | undefined;
@@ -38,9 +38,7 @@ export function MessageRenderer({ activity, parsed }: Props) {
       {action && (
         <div>
           <p className="text-xs text-gray-500 mb-1">Action:</p>
-          <span className="text-xs px-2 py-1 bg-gray-800 rounded text-gray-300">
-            {action}
-          </span>
+          <span className="text-xs px-2 py-1 bg-gray-800 rounded text-gray-300">{action}</span>
         </div>
       )}
 

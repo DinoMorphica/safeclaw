@@ -1,11 +1,6 @@
 import fs from "node:fs";
 import Database from "better-sqlite3";
-import {
-  DB_PATH,
-  CONFIG_PATH,
-  SAFECLAW_DIR,
-  OPENCLAW_CONFIG_PATH,
-} from "../lib/paths.js";
+import { DB_PATH, CONFIG_PATH, SAFECLAW_DIR, OPENCLAW_CONFIG_PATH } from "../lib/paths.js";
 import { readConfig } from "../lib/config.js";
 import { VERSION } from "../lib/version.js";
 import pc from "picocolors";
@@ -22,10 +17,7 @@ export async function statusCommand(options: StatusOptions): Promise<void> {
       console.log(JSON.stringify({ initialized: false }, null, 2));
     } else {
       console.log(
-        pc.yellow("SafeClaw is not initialized.") +
-          " Run " +
-          pc.cyan("safeclaw start") +
-          " first.",
+        pc.yellow("SafeClaw is not initialized.") + " Run " + pc.cyan("safeclaw start") + " first.",
       );
     }
     return;
@@ -39,13 +31,13 @@ export async function statusCommand(options: StatusOptions): Promise<void> {
   if (dbExists) {
     try {
       const sqlite = new Database(DB_PATH, { readonly: true });
-      const cmdRow = sqlite
-        .prepare("SELECT COUNT(*) as count FROM command_logs")
-        .get() as { count: number };
+      const cmdRow = sqlite.prepare("SELECT COUNT(*) as count FROM command_logs").get() as {
+        count: number;
+      };
       logCount = cmdRow.count;
-      const actRow = sqlite
-        .prepare("SELECT COUNT(*) as count FROM agent_activities")
-        .get() as { count: number };
+      const actRow = sqlite.prepare("SELECT COUNT(*) as count FROM agent_activities").get() as {
+        count: number;
+      };
       activityCount = actRow.count;
       sqlite.close();
     } catch {
@@ -77,9 +69,7 @@ export async function statusCommand(options: StatusOptions): Promise<void> {
   console.log(pc.bold("\nSafeClaw Status") + pc.dim(` v${VERSION}`));
   console.log(pc.dim("─".repeat(40)));
   console.log(`  ${pc.dim("Data dir:")}   ${SAFECLAW_DIR}`);
-  console.log(
-    `  ${pc.dim("Database:")}   ${dbExists ? pc.green("exists") : pc.red("not found")}`,
-  );
+  console.log(`  ${pc.dim("Database:")}   ${dbExists ? pc.green("exists") : pc.red("not found")}`);
   console.log(
     `  ${pc.dim("Config:")}     ${fs.existsSync(CONFIG_PATH) ? pc.green("exists") : pc.red("not found")}`,
   );

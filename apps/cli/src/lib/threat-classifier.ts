@@ -44,7 +44,11 @@ export interface ThreatClassification {
 // --- Severity helpers ---
 
 const SEVERITY_ORDER: Record<ThreatLevel, number> = {
-  NONE: 0, LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4,
+  NONE: 0,
+  LOW: 1,
+  MEDIUM: 2,
+  HIGH: 3,
+  CRITICAL: 4,
 };
 
 function maxThreat(a: ThreatLevel, b: ThreatLevel): ThreatLevel {
@@ -81,13 +85,14 @@ export function classifyActivity(input: ClassificationInput): ThreatClassificati
   findings.push(...analyzeNetworkActivity(input));
   findings.push(...analyzeMcpToolPoisoning(input));
 
-  const threatLevel = findings.length > 0
-    ? findings.reduce((max, f) => maxThreat(max, f.severity), "NONE" as ThreatLevel)
-    : "NONE";
+  const threatLevel =
+    findings.length > 0
+      ? findings.reduce((max, f) => maxThreat(max, f.severity), "NONE" as ThreatLevel)
+      : "NONE";
 
   const secretTypes = findings
-    .filter(f => f.categoryId === "TC-SEC" && f.evidence)
-    .map(f => f.evidence!);
+    .filter((f) => f.categoryId === "TC-SEC" && f.evidence)
+    .map((f) => f.evidence!);
   const secretsDetected = secretTypes.length > 0 ? secretTypes : null;
 
   return { threatLevel, findings, secretsDetected };
@@ -100,7 +105,9 @@ function analyzeSecretExposure(input: ClassificationInput): ThreatFinding[] {
   const results: ThreatFinding[] = [];
 
   // Only relevant for activities that consume content into agent context
-  const consumesContent = ["file_read", "shell_command", "web_browse", "tool_call"].includes(input.activityType);
+  const consumesContent = ["file_read", "shell_command", "web_browse", "tool_call"].includes(
+    input.activityType,
+  );
   const writesContent = input.activityType === "file_write";
 
   // Scan contentPreview for secrets
@@ -108,18 +115,27 @@ function analyzeSecretExposure(input: ClassificationInput): ThreatFinding[] {
     const scan = scanForSecrets(input.contentPreview);
     for (const secretType of scan.types) {
       if (consumesContent) {
-        results.push(finding(
-          "TC-SEC", "Secret Exposure", scan.maxSeverity,
-          `Content contains ${secretType} \u2014 sent to model provider cloud as part of agent context`,
-          secretType, "LLM02",
-        ));
+        results.push(
+          finding(
+            "TC-SEC",
+            "Secret Exposure",
+            scan.maxSeverity,
+            `Content contains ${secretType} \u2014 sent to model provider cloud as part of agent context`,
+            secretType,
+            "LLM02",
+          ),
+        );
       } else if (writesContent) {
-        results.push(finding(
-          "TC-SEC", "Secret Exposure",
-          SEVERITY_ORDER[scan.maxSeverity] >= SEVERITY_ORDER["HIGH"] ? "HIGH" : scan.maxSeverity,
-          `Writing content containing ${secretType} \u2014 creates credential leak risk`,
-          secretType, "LLM02",
-        ));
+        results.push(
+          finding(
+            "TC-SEC",
+            "Secret Exposure",
+            SEVERITY_ORDER[scan.maxSeverity] >= SEVERITY_ORDER["HIGH"] ? "HIGH" : scan.maxSeverity,
+            `Writing content containing ${secretType} \u2014 creates credential leak risk`,
+            secretType,
+            "LLM02",
+          ),
+        );
       }
     }
   }
@@ -129,12 +145,17 @@ function analyzeSecretExposure(input: ClassificationInput): ThreatFinding[] {
     const scan = scanForSecrets(input.readContentPreview);
     for (const secretType of scan.types) {
       // Avoid duplicates if same secret found in both
-      if (!results.some(r => r.evidence === secretType)) {
-        results.push(finding(
-          "TC-SEC", "Secret Exposure", scan.maxSeverity,
-          `File being edited contains ${secretType} \u2014 original content was in agent context`,
-          secretType, "LLM02",
-        ));
+      if (!results.some((r) => r.evidence === secretType)) {
+        results.push(
+          finding(
+            "TC-SEC",
+            "Secret Exposure",
+            scan.maxSeverity,
+            `File being edited contains ${secretType} \u2014 original content was in agent context`,
+            secretType,
+            "LLM02",
+          ),
+        );
       }
     }
   }
@@ -155,11 +176,16 @@ function analyzeDataExfiltration(input: ClassificationInput): ThreatFinding[] {
     // Check for data being sent to exfiltration services
     for (const { pattern, label } of EXFILTRATION_URLS) {
       if (pattern.test(cmd)) {
-        results.push(finding(
-          "TC-EXF", "Data Exfiltration", "HIGH",
-          `Command targets known exfiltration service: ${label}`,
-          label, "LLM02",
-        ));
+        results.push(
+          finding(
+            "TC-EXF",
+            "Data Exfiltration",
+            "HIGH",
+            `Command targets known exfiltration service: ${label}`,
+            label,
+            "LLM02",
+          ),
+        );
         break;
       }
     }
@@ -167,11 +193,16 @@ function analyzeDataExfiltration(input: ClassificationInput): ThreatFinding[] {
     // curl/wget POST with data
     for (const { pattern, label } of NETWORK_COMMAND_PATTERNS) {
       if (pattern.test(cmd) && /(?:--data|-d\s|--post-data)/.test(cmd)) {
-        results.push(finding(
-          "TC-EXF", "Data Exfiltration", "MEDIUM",
-          `Outbound data transfer via ${label}`,
-          label, "LLM02",
-        ));
+        results.push(
+          finding(
+            "TC-EXF",
+            "Data Exfiltration",
+            "MEDIUM",
+            `Outbound data transfer via ${label}`,
+            label,
+            "LLM02",
+          ),
+        );
         break;
       }
     }
@@ -181,11 +212,16 @@ function analyzeDataExfiltration(input: ClassificationInput): ThreatFinding[] {
   if (input.activityType === "web_browse" && input.targetPath) {
     for (const { pattern, label } of EXFILTRATION_URLS) {
       if (pattern.test(input.targetPath)) {
-        results.push(finding(
-          "TC-EXF", "Data Exfiltration", "HIGH",
-          `Browsing known exfiltration service: ${label}`,
-          label, "LLM02",
-        ));
+        results.push(
+          finding(
+            "TC-EXF",
+            "Data Exfiltration",
+            "HIGH",
+            `Browsing known exfiltration service: ${label}`,
+            label,
+            "LLM02",
+          ),
+        );
         break;
       }
     }
@@ -195,11 +231,16 @@ function analyzeDataExfiltration(input: ClassificationInput): ThreatFinding[] {
   if (input.activityType === "message" && input.contentPreview) {
     const scan = scanForSecrets(input.contentPreview);
     if (scan.types.length > 0) {
-      results.push(finding(
-        "TC-EXF", "Data Exfiltration", "CRITICAL",
-        `Message contains secrets (${scan.types.join(", ")}) being sent externally`,
-        scan.types.join(", "), "LLM02",
-      ));
+      results.push(
+        finding(
+          "TC-EXF",
+          "Data Exfiltration",
+          "CRITICAL",
+          `Message contains secrets (${scan.types.join(", ")}) being sent externally`,
+          scan.types.join(", "),
+          "LLM02",
+        ),
+      );
     }
   }
 
@@ -207,21 +248,31 @@ function analyzeDataExfiltration(input: ClassificationInput): ThreatFinding[] {
   if (input.activityType === "file_write" && input.contentPreview) {
     for (const { pattern, label } of CODE_EXFILTRATION_PATTERNS) {
       if (pattern.test(input.contentPreview)) {
-        results.push(finding(
-          "TC-EXF", "Data Exfiltration", "HIGH",
-          `Written code contains data exfiltration pattern: ${label}`,
-          label, "LLM02",
-        ));
+        results.push(
+          finding(
+            "TC-EXF",
+            "Data Exfiltration",
+            "HIGH",
+            `Written code contains data exfiltration pattern: ${label}`,
+            label,
+            "LLM02",
+          ),
+        );
         break;
       }
     }
     for (const { pattern, label } of OBFUSCATION_PATTERNS) {
       if (pattern.test(input.contentPreview)) {
-        results.push(finding(
-          "TC-EXF", "Data Exfiltration", "HIGH",
-          `Written code contains obfuscation pattern: ${label}`,
-          label, "LLM05",
-        ));
+        results.push(
+          finding(
+            "TC-EXF",
+            "Data Exfiltration",
+            "HIGH",
+            `Written code contains obfuscation pattern: ${label}`,
+            label,
+            "LLM05",
+          ),
+        );
         break;
       }
     }
@@ -247,28 +298,46 @@ function analyzePromptInjection(input: ClassificationInput): ThreatFinding[] {
   for (const pattern of PROMPT_INJECTION_STRONG) {
     const match = input.contentPreview.match(pattern);
     if (match) {
-      const source = input.activityType === "web_browse" ? "Web page" :
-        input.activityType === "file_read" ? "File" :
-        input.activityType === "shell_command" ? "Command output" : "Content";
-      results.push(finding(
-        "TC-INJ", "Prompt Injection Risk", "HIGH",
-        `${source} contains potential prompt injection: "${match[0].slice(0, 80)}"`,
-        match[0].slice(0, 100), "LLM01",
-      ));
+      const source =
+        input.activityType === "web_browse"
+          ? "Web page"
+          : input.activityType === "file_read"
+            ? "File"
+            : input.activityType === "shell_command"
+              ? "Command output"
+              : "Content";
+      results.push(
+        finding(
+          "TC-INJ",
+          "Prompt Injection Risk",
+          "HIGH",
+          `${source} contains potential prompt injection: "${match[0].slice(0, 80)}"`,
+          match[0].slice(0, 100),
+          "LLM01",
+        ),
+      );
       break; // One strong match is enough
     }
   }
 
   // Weak patterns — only flag if from external/untrusted source
-  if (results.length === 0 && (input.activityType === "web_browse" || input.activityType === "tool_call")) {
+  if (
+    results.length === 0 &&
+    (input.activityType === "web_browse" || input.activityType === "tool_call")
+  ) {
     for (const pattern of PROMPT_INJECTION_WEAK) {
       const match = input.contentPreview.match(pattern);
       if (match) {
-        results.push(finding(
-          "TC-INJ", "Prompt Injection Risk", "MEDIUM",
-          `External content contains instruction-like pattern: "${match[0].slice(0, 80)}"`,
-          match[0].slice(0, 100), "LLM01",
-        ));
+        results.push(
+          finding(
+            "TC-INJ",
+            "Prompt Injection Risk",
+            "MEDIUM",
+            `External content contains instruction-like pattern: "${match[0].slice(0, 80)}"`,
+            match[0].slice(0, 100),
+            "LLM01",
+          ),
+        );
         break;
       }
     }
@@ -287,22 +356,32 @@ function analyzeDestructiveOps(input: ClassificationInput): ThreatFinding[] {
 
     for (const { pattern, label } of DESTRUCTIVE_CRITICAL) {
       if (pattern.test(cmd)) {
-        results.push(finding(
-          "TC-DES", "Destructive Operation", "CRITICAL",
-          `Destructive system command: ${label}`,
-          label, "LLM06",
-        ));
+        results.push(
+          finding(
+            "TC-DES",
+            "Destructive Operation",
+            "CRITICAL",
+            `Destructive system command: ${label}`,
+            label,
+            "LLM06",
+          ),
+        );
         return results; // CRITICAL found, no need to check HIGH
       }
     }
 
     for (const { pattern, label } of DESTRUCTIVE_HIGH) {
       if (pattern.test(cmd)) {
-        results.push(finding(
-          "TC-DES", "Destructive Operation", "HIGH",
-          `Potentially destructive command: ${label}`,
-          label, "LLM06",
-        ));
+        results.push(
+          finding(
+            "TC-DES",
+            "Destructive Operation",
+            "HIGH",
+            `Potentially destructive command: ${label}`,
+            label,
+            "LLM06",
+          ),
+        );
         break;
       }
     }
@@ -311,11 +390,16 @@ function analyzeDestructiveOps(input: ClassificationInput): ThreatFinding[] {
   // File writes with destructive SQL content
   if (input.activityType === "file_write" && input.contentPreview) {
     if (/DROP\s+(?:TABLE|DATABASE|SCHEMA)\b/i.test(input.contentPreview)) {
-      results.push(finding(
-        "TC-DES", "Destructive Operation", "MEDIUM",
-        "File contains destructive SQL statements (DROP)",
-        "DROP TABLE/DATABASE", "LLM06",
-      ));
+      results.push(
+        finding(
+          "TC-DES",
+          "Destructive Operation",
+          "MEDIUM",
+          "File contains destructive SQL statements (DROP)",
+          "DROP TABLE/DATABASE",
+          "LLM06",
+        ),
+      );
     }
   }
 
@@ -333,22 +417,32 @@ function analyzePrivilegeEscalation(input: ClassificationInput): ThreatFinding[]
 
   for (const { pattern, label } of PRIVILEGE_CRITICAL) {
     if (pattern.test(cmd)) {
-      results.push(finding(
-        "TC-ESC", "Privilege Escalation", "CRITICAL",
-        `Elevated privilege with destructive command: ${label}`,
-        label, "LLM06",
-      ));
+      results.push(
+        finding(
+          "TC-ESC",
+          "Privilege Escalation",
+          "CRITICAL",
+          `Elevated privilege with destructive command: ${label}`,
+          label,
+          "LLM06",
+        ),
+      );
       return results;
     }
   }
 
   for (const { pattern, label } of PRIVILEGE_HIGH) {
     if (pattern.test(cmd)) {
-      results.push(finding(
-        "TC-ESC", "Privilege Escalation", "HIGH",
-        `Privilege escalation: ${label}`,
-        label, "LLM06",
-      ));
+      results.push(
+        finding(
+          "TC-ESC",
+          "Privilege Escalation",
+          "HIGH",
+          `Privilege escalation: ${label}`,
+          label,
+          "LLM06",
+        ),
+      );
       break;
     }
   }
@@ -357,11 +451,16 @@ function analyzePrivilegeEscalation(input: ClassificationInput): ThreatFinding[]
   if (results.length === 0) {
     for (const { pattern, label } of PRIVILEGE_MEDIUM) {
       if (pattern.test(cmd)) {
-        results.push(finding(
-          "TC-ESC", "Privilege Escalation", "MEDIUM",
-          `Permission modification: ${label}`,
-          label, "LLM06",
-        ));
+        results.push(
+          finding(
+            "TC-ESC",
+            "Privilege Escalation",
+            "MEDIUM",
+            `Permission modification: ${label}`,
+            label,
+            "LLM06",
+          ),
+        );
         break;
       }
     }
@@ -380,22 +479,32 @@ function analyzeSupplyChain(input: ClassificationInput): ThreatFinding[] {
 
     for (const { pattern, label } of SUPPLY_CHAIN_HIGH) {
       if (pattern.test(cmd)) {
-        results.push(finding(
-          "TC-SUP", "Supply Chain Risk", "HIGH",
-          `Package installation or remote execution: ${label}`,
-          label, "LLM03",
-        ));
+        results.push(
+          finding(
+            "TC-SUP",
+            "Supply Chain Risk",
+            "HIGH",
+            `Package installation or remote execution: ${label}`,
+            label,
+            "LLM03",
+          ),
+        );
         return results;
       }
     }
 
     for (const { pattern, label } of SUPPLY_CHAIN_MEDIUM) {
       if (pattern.test(cmd)) {
-        results.push(finding(
-          "TC-SUP", "Supply Chain Risk", "MEDIUM",
-          `Package management operation: ${label}`,
-          label, "LLM03",
-        ));
+        results.push(
+          finding(
+            "TC-SUP",
+            "Supply Chain Risk",
+            "MEDIUM",
+            `Package management operation: ${label}`,
+            label,
+            "LLM03",
+          ),
+        );
         break;
       }
     }
@@ -405,21 +514,31 @@ function analyzeSupplyChain(input: ClassificationInput): ThreatFinding[] {
   if (input.activityType === "file_write" && input.targetPath) {
     for (const pattern of DEPENDENCY_FILES) {
       if (pattern.test(input.targetPath)) {
-        results.push(finding(
-          "TC-SUP", "Supply Chain Risk", "MEDIUM",
-          `Modifying dependency file: ${input.targetPath.split("/").pop()}`,
-          input.targetPath, "LLM03",
-        ));
+        results.push(
+          finding(
+            "TC-SUP",
+            "Supply Chain Risk",
+            "MEDIUM",
+            `Modifying dependency file: ${input.targetPath.split("/").pop()}`,
+            input.targetPath,
+            "LLM03",
+          ),
+        );
         break;
       }
     }
     for (const pattern of BUILD_CI_FILES) {
       if (pattern.test(input.targetPath)) {
-        results.push(finding(
-          "TC-SUP", "Supply Chain Risk", "MEDIUM",
-          `Modifying build/CI configuration: ${input.targetPath.split("/").pop()}`,
-          input.targetPath, "LLM03",
-        ));
+        results.push(
+          finding(
+            "TC-SUP",
+            "Supply Chain Risk",
+            "MEDIUM",
+            `Modifying build/CI configuration: ${input.targetPath.split("/").pop()}`,
+            input.targetPath,
+            "LLM03",
+          ),
+        );
         break;
       }
     }
@@ -442,11 +561,16 @@ function analyzeSensitiveFileAccess(input: ClassificationInput): ThreatFinding[]
     if (rule.pattern.test(input.targetPath)) {
       const severity = isWrite ? rule.writeSeverity : rule.readSeverity;
       const verb = isWrite ? "Writing to" : "Reading";
-      results.push(finding(
-        "TC-SFA", "Sensitive File Access", severity,
-        `${verb} sensitive path: ${rule.label}`,
-        input.targetPath, "LLM02",
-      ));
+      results.push(
+        finding(
+          "TC-SFA",
+          "Sensitive File Access",
+          severity,
+          `${verb} sensitive path: ${rule.label}`,
+          input.targetPath,
+          "LLM02",
+        ),
+      );
       break; // One path match is enough
     }
   }
@@ -465,11 +589,16 @@ function analyzeSystemModification(input: ClassificationInput): ThreatFinding[] 
 
   for (const rule of SYSTEM_PATH_RULES) {
     if (rule.pattern.test(input.targetPath)) {
-      results.push(finding(
-        "TC-SYS", "System Modification", rule.severity,
-        `Modifying system path: ${rule.label}`,
-        input.targetPath, "LLM06",
-      ));
+      results.push(
+        finding(
+          "TC-SYS",
+          "System Modification",
+          rule.severity,
+          `Modifying system path: ${rule.label}`,
+          input.targetPath,
+          "LLM06",
+        ),
+      );
       break;
     }
   }
@@ -486,11 +615,15 @@ function analyzeNetworkActivity(input: ClassificationInput): ThreatFinding[] {
   if (input.activityType === "web_browse" && input.targetPath) {
     // Exfiltration URLs are covered in TC-EXF, check for additional network threats
     if (RAW_IP_URL.test(input.targetPath)) {
-      results.push(finding(
-        "TC-NET", "Suspicious Network", "MEDIUM",
-        `Browsing raw IP address instead of domain name`,
-        input.targetPath,
-      ));
+      results.push(
+        finding(
+          "TC-NET",
+          "Suspicious Network",
+          "MEDIUM",
+          `Browsing raw IP address instead of domain name`,
+          input.targetPath,
+        ),
+      );
     }
   }
 
@@ -502,13 +635,11 @@ function analyzeNetworkActivity(input: ClassificationInput): ThreatFinding[] {
     for (const { pattern, label } of NETWORK_COMMAND_PATTERNS) {
       if (pattern.test(cmd)) {
         // Only flag if it's not already captured by TC-EXF
-        const hasExfilUrl = EXFILTRATION_URLS.some(e => e.pattern.test(cmd));
+        const hasExfilUrl = EXFILTRATION_URLS.some((e) => e.pattern.test(cmd));
         if (!hasExfilUrl) {
-          results.push(finding(
-            "TC-NET", "Suspicious Network", "MEDIUM",
-            `Network operation: ${label}`,
-            label,
-          ));
+          results.push(
+            finding("TC-NET", "Suspicious Network", "MEDIUM", `Network operation: ${label}`, label),
+          );
           break;
         }
       }
@@ -517,11 +648,15 @@ function analyzeNetworkActivity(input: ClassificationInput): ThreatFinding[] {
 
   // Messages are inherently network activity
   if (input.activityType === "message") {
-    results.push(finding(
-      "TC-NET", "Suspicious Network", "LOW",
-      "External message sent",
-      input.targetPath ?? undefined,
-    ));
+    results.push(
+      finding(
+        "TC-NET",
+        "Suspicious Network",
+        "LOW",
+        "External message sent",
+        input.targetPath ?? undefined,
+      ),
+    );
   }
 
   return results;
@@ -539,11 +674,16 @@ function analyzeMcpToolPoisoning(input: ClassificationInput): ThreatFinding[] {
   if (input.contentPreview) {
     for (const pattern of PROMPT_INJECTION_STRONG) {
       if (pattern.test(input.contentPreview)) {
-        results.push(finding(
-          "TC-MCP", "MCP/Tool Poisoning", "HIGH",
-          `Tool response contains agent-directive content that may manipulate behavior`,
-          input.toolName ?? undefined, "LLM01",
-        ));
+        results.push(
+          finding(
+            "TC-MCP",
+            "MCP/Tool Poisoning",
+            "HIGH",
+            `Tool response contains agent-directive content that may manipulate behavior`,
+            input.toolName ?? undefined,
+            "LLM01",
+          ),
+        );
         break;
       }
     }

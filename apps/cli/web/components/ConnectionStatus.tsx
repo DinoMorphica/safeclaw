@@ -3,8 +3,7 @@ import { socket } from "../lib/socket";
 import type { OpenClawMonitorStatus } from "@safeclaw/shared";
 
 export function ConnectionStatus() {
-  const [openclawStatus, setOpenclawStatus] =
-    useState<OpenClawMonitorStatus | null>(null);
+  const [openclawStatus, setOpenclawStatus] = useState<OpenClawMonitorStatus | null>(null);
 
   useEffect(() => {
     socket.emit("safeclaw:getOpenclawMonitorStatus");

@@ -3,7 +3,16 @@
   "version": "0.1.6",
   "description": "Security management dashboard for AI agents – intercept, monitor, and control what AI agents can do on your system",
   "type": "module",
-  "license": "AGPL-3.0-only",
+  "author": "Dino Dervisevic",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DinoMorphica/safeclaw.git",
+    "directory": "apps/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/DinoMorphica/safeclaw/issues"
+  },
   "main": "./dist/main.js",
   "bin": {
     "safeclaw": "./bin/safeclaw.js"
@@ -34,7 +43,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "pnpm build && pnpm typecheck"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
@@ -77,6 +87,7 @@
     "dist/main.js",
     "bin",
     "public",
-    "!public/.gitkeep"
+    "!public/.gitkeep",
+    "LICENSE"
   ]
 }

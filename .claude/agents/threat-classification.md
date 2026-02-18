@@ -15,18 +15,18 @@ The system is grounded in OWASP LLM Top 10 (2025) and MCP security research (Inv
 
 ## 10 Threat Categories
 
-| ID | Name | What it detects | OWASP Ref |
-|----|------|----------------|-----------|
-| TC-SEC | Secret Exposure | API keys, tokens, PEM keys, DB URLs in content previews. These get sent to model provider cloud. | LLM02 |
-| TC-EXF | Data Exfiltration | Commands/URLs targeting paste sites, transfer services, ngrok, webhook.site. Code patterns like `fetch(process.env)`. | LLM02 |
-| TC-INJ | Prompt Injection Risk | Directive patterns in consumed content (web pages, tool responses): "ignore previous", "you are now", base64-encoded instructions. | LLM01 |
-| TC-DES | Destructive Operation | `rm -rf /`, `mkfs`, `dd`, fork bombs, `DROP TABLE`, `TRUNCATE`. | LLM06 |
-| TC-ESC | Privilege Escalation | `sudo`, `chmod 777`, `chown root`, `usermod`, `su -`, setuid changes. | LLM06 |
-| TC-SUP | Supply Chain Risk | `npm install <pkg>`, `pip install`, `curl | bash`, `brew install`, modifying package.json/requirements.txt/Dockerfile. | LLM03 |
-| TC-SFA | Sensitive File Access | `.ssh/`, `.env`, `.aws/credentials`, `.pem`, `.p12`, keychain files. Read vs write severity differs. | LLM02 |
-| TC-SYS | System Modification | Writing to `/etc/`, `/usr/bin/`, `/boot/`, `.bashrc`, `.zshrc`, crontab, systemd units. | LLM06 |
-| TC-NET | Suspicious Network | Raw IP connections, network commands (`curl POST`, `wget`, `netcat`, `ssh`, `scp`), messaging activity. | LLM02 |
-| TC-MCP | MCP/Tool Poisoning | Directive content detected in tool responses that could manipulate agent behavior. | LLM01 |
+| ID     | Name                  | What it detects                                                                                                                    | OWASP Ref                                                                  |
+| ------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----- |
+| TC-SEC | Secret Exposure       | API keys, tokens, PEM keys, DB URLs in content previews. These get sent to model provider cloud.                                   | LLM02                                                                      |
+| TC-EXF | Data Exfiltration     | Commands/URLs targeting paste sites, transfer services, ngrok, webhook.site. Code patterns like `fetch(process.env)`.              | LLM02                                                                      |
+| TC-INJ | Prompt Injection Risk | Directive patterns in consumed content (web pages, tool responses): "ignore previous", "you are now", base64-encoded instructions. | LLM01                                                                      |
+| TC-DES | Destructive Operation | `rm -rf /`, `mkfs`, `dd`, fork bombs, `DROP TABLE`, `TRUNCATE`.                                                                    | LLM06                                                                      |
+| TC-ESC | Privilege Escalation  | `sudo`, `chmod 777`, `chown root`, `usermod`, `su -`, setuid changes.                                                              | LLM06                                                                      |
+| TC-SUP | Supply Chain Risk     | `npm install <pkg>`, `pip install`, `curl                                                                                          | bash`, `brew install`, modifying package.json/requirements.txt/Dockerfile. | LLM03 |
+| TC-SFA | Sensitive File Access | `.ssh/`, `.env`, `.aws/credentials`, `.pem`, `.p12`, keychain files. Read vs write severity differs.                               | LLM02                                                                      |
+| TC-SYS | System Modification   | Writing to `/etc/`, `/usr/bin/`, `/boot/`, `.bashrc`, `.zshrc`, crontab, systemd units.                                            | LLM06                                                                      |
+| TC-NET | Suspicious Network    | Raw IP connections, network commands (`curl POST`, `wget`, `netcat`, `ssh`, `scp`), messaging activity.                            | LLM02                                                                      |
+| TC-MCP | MCP/Tool Poisoning    | Directive content detected in tool responses that could manipulate agent behavior.                                                 | LLM01                                                                      |
 
 ## Architecture
 
@@ -105,18 +105,18 @@ All regex patterns are centralized in `apps/cli/src/lib/threat-patterns.ts`:
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `apps/cli/src/lib/threat-classifier.ts` | Core engine — 10 analyzer functions + `classifyActivity()` |
-| `apps/cli/src/lib/threat-patterns.ts` | All regex patterns organized by threat category |
-| `apps/cli/src/lib/secret-scanner.ts` | Secret detection patterns (used by TC-SEC analyzer) |
-| `apps/cli/src/interceptor.ts` | Thin wrapper — calls `classifyActivity()`, returns `ActivityThreatResult` |
-| `apps/cli/src/services/openclaw-monitor.ts` | Pipeline — passes params, stores/emits findings |
-| `apps/web/src/lib/securityAnalyzer.ts` | Frontend — maps findings to UI indicators, legacy fallback |
-| `apps/web/src/components/ActivityDetails/ActivityDetailPanel.tsx` | Renders finding cards with category badges |
-| `packages/shared/src/types.ts` | `ThreatCategoryId`, `ThreatFinding`, `AgentActivity.threatFindings` |
-| `packages/shared/src/schemas.ts` | Zod schemas for runtime validation |
-| `apps/cli/src/db/schema.ts` | `threat_findings TEXT` column on `agent_activities` |
+| File                                                              | Purpose                                                                   |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `apps/cli/src/lib/threat-classifier.ts`                           | Core engine — 10 analyzer functions + `classifyActivity()`                |
+| `apps/cli/src/lib/threat-patterns.ts`                             | All regex patterns organized by threat category                           |
+| `apps/cli/src/lib/secret-scanner.ts`                              | Secret detection patterns (used by TC-SEC analyzer)                       |
+| `apps/cli/src/interceptor.ts`                                     | Thin wrapper — calls `classifyActivity()`, returns `ActivityThreatResult` |
+| `apps/cli/src/services/openclaw-monitor.ts`                       | Pipeline — passes params, stores/emits findings                           |
+| `apps/web/src/lib/securityAnalyzer.ts`                            | Frontend — maps findings to UI indicators, legacy fallback                |
+| `apps/web/src/components/ActivityDetails/ActivityDetailPanel.tsx` | Renders finding cards with category badges                                |
+| `packages/shared/src/types.ts`                                    | `ThreatCategoryId`, `ThreatFinding`, `AgentActivity.threatFindings`       |
+| `packages/shared/src/schemas.ts`                                  | Zod schemas for runtime validation                                        |
+| `apps/cli/src/db/schema.ts`                                       | `threat_findings TEXT` column on `agent_activities`                       |
 
 ## Adding a New Threat Category
 

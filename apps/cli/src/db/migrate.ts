@@ -67,48 +67,32 @@ export function pushSchema(): void {
   `);
 
   // --- v0.2.0 migration: add run_id, content_preview, secrets_detected columns ---
-  const columns = sqlite
-    .prepare("PRAGMA table_info(agent_activities)")
-    .all() as { name: string }[];
+  const columns = sqlite.prepare("PRAGMA table_info(agent_activities)").all() as { name: string }[];
   const columnNames = new Set(columns.map((c) => c.name));
 
   if (!columnNames.has("run_id")) {
     sqlite.exec("ALTER TABLE agent_activities ADD COLUMN run_id TEXT");
   }
   if (!columnNames.has("content_preview")) {
-    sqlite.exec(
-      "ALTER TABLE agent_activities ADD COLUMN content_preview TEXT",
-    );
+    sqlite.exec("ALTER TABLE agent_activities ADD COLUMN content_preview TEXT");
   }
   if (!columnNames.has("secrets_detected")) {
-    sqlite.exec(
-      "ALTER TABLE agent_activities ADD COLUMN secrets_detected TEXT",
-    );
+    sqlite.exec("ALTER TABLE agent_activities ADD COLUMN secrets_detected TEXT");
   }
   if (!columnNames.has("read_content_preview")) {
-    sqlite.exec(
-      "ALTER TABLE agent_activities ADD COLUMN read_content_preview TEXT",
-    );
+    sqlite.exec("ALTER TABLE agent_activities ADD COLUMN read_content_preview TEXT");
   }
   if (!columnNames.has("threat_findings")) {
-    sqlite.exec(
-      "ALTER TABLE agent_activities ADD COLUMN threat_findings TEXT",
-    );
+    sqlite.exec("ALTER TABLE agent_activities ADD COLUMN threat_findings TEXT");
   }
   if (!columnNames.has("resolved")) {
-    sqlite.exec(
-      "ALTER TABLE agent_activities ADD COLUMN resolved INTEGER NOT NULL DEFAULT 0",
-    );
+    sqlite.exec("ALTER TABLE agent_activities ADD COLUMN resolved INTEGER NOT NULL DEFAULT 0");
   }
   if (!columnNames.has("resolved_at")) {
-    sqlite.exec(
-      "ALTER TABLE agent_activities ADD COLUMN resolved_at TEXT",
-    );
+    sqlite.exec("ALTER TABLE agent_activities ADD COLUMN resolved_at TEXT");
   }
 
-  sqlite.exec(
-    "CREATE INDEX IF NOT EXISTS idx_agent_activities_run_id ON agent_activities(run_id)",
-  );
+  sqlite.exec("CREATE INDEX IF NOT EXISTS idx_agent_activities_run_id ON agent_activities(run_id)");
 
   // --- v0.3.0 migration: restricted_patterns and exec_approvals tables ---
   sqlite.exec(`
@@ -139,9 +123,9 @@ export function pushSchema(): void {
   `);
 
   // Seed default access config if table is empty
-  const count = sqlite
-    .prepare("SELECT COUNT(*) as cnt FROM access_config")
-    .get() as { cnt: number };
+  const count = sqlite.prepare("SELECT COUNT(*) as cnt FROM access_config").get() as {
+    cnt: number;
+  };
 
   if (count.cnt === 0) {
     const insert = sqlite.prepare(

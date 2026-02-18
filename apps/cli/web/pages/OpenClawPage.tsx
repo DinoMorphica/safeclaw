@@ -9,10 +9,7 @@ const RECOMMENDED_MODELS = [
   "openai/gpt-4.5",
 ];
 
-const WEAK_MODELS = [
-  "anthropic/claude-haiku-4-5",
-  "anthropic/claude-haiku-3-5",
-];
+const WEAK_MODELS = ["anthropic/claude-haiku-4-5", "anthropic/claude-haiku-3-5"];
 
 export function OpenClawPage() {
   const [config, setConfig] = useState<OpenClawConfig | null>(null);
@@ -28,9 +25,7 @@ export function OpenClawPage() {
   const [subagentMaxConcurrent, setSubagentMaxConcurrent] = useState("");
   const [gatewayBind, setGatewayBind] = useState("loopback");
   const [selfChatMode, setSelfChatMode] = useState(false);
-  const [pluginOverrides, setPluginOverrides] = useState<
-    Record<string, boolean>
-  >({});
+  const [pluginOverrides, setPluginOverrides] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     socket.emit("safeclaw:getOpenclawConfig");
@@ -46,9 +41,7 @@ export function OpenClawPage() {
       setDmPolicy(data.channels?.whatsapp?.dmPolicy ?? "");
       setAllowFrom(data.channels?.whatsapp?.allowFrom?.join(", ") ?? "");
       setMaxConcurrent(String(data.agents?.defaults?.maxConcurrent ?? ""));
-      setSubagentMaxConcurrent(
-        String(data.agents?.defaults?.subagents?.maxConcurrent ?? ""),
-      );
+      setSubagentMaxConcurrent(String(data.agents?.defaults?.subagents?.maxConcurrent ?? ""));
       setGatewayBind(data.gateway?.bind ?? "loopback");
       setSelfChatMode(data.channels?.whatsapp?.selfChatMode ?? false);
       setPluginOverrides({});
@@ -146,8 +139,8 @@ export function OpenClawPage() {
             OpenClaw config not found at <code>~/.openclaw/openclaw.json</code>.
           </p>
           <p className="text-gray-500 mt-2 text-sm">
-            Install and configure OpenClaw first, then return here to manage its
-            settings through SafeClaw.
+            Install and configure OpenClaw first, then return here to manage its settings through
+            SafeClaw.
           </p>
         </div>
       </div>
@@ -169,22 +162,21 @@ export function OpenClawPage() {
     <div>
       <h2 className="text-2xl font-bold mb-2">OpenClaw Configuration</h2>
       <p className="text-sm text-gray-500 mb-6">
-        Manage the settings of your OpenClaw instance directly from SafeClaw.
-        Changes are written to <code>~/.openclaw/openclaw.json</code>.
+        Manage the settings of your OpenClaw instance directly from SafeClaw. Changes are written to{" "}
+        <code>~/.openclaw/openclaw.json</code>.
       </p>
 
       <div className="space-y-4">
         {/* Security: Model Selection */}
         <Section title="Agent Model" badge={isWeakModel ? "WARN" : undefined}>
           <p className="text-sm text-gray-500 mb-3">
-            The primary model used by OpenClaw agents. Weaker models are more
-            susceptible to prompt injection.
+            The primary model used by OpenClaw agents. Weaker models are more susceptible to prompt
+            injection.
           </p>
           {isWeakModel && (
             <div className="rounded-lg bg-yellow-900/30 border border-yellow-700/50 px-4 py-2 mb-3">
               <p className="text-sm text-yellow-400">
-                Current model is below recommended tier. Consider upgrading to a
-                top-tier model.
+                Current model is below recommended tier. Consider upgrading to a top-tier model.
               </p>
             </div>
           )}
@@ -220,20 +212,16 @@ export function OpenClawPage() {
         {/* Security: Gateway Trusted Proxies */}
         <Section
           title="Gateway Trusted Proxies"
-          badge={
-            !config.gateway?.trustedProxies?.length ? "WARN" : undefined
-          }
+          badge={!config.gateway?.trustedProxies?.length ? "WARN" : undefined}
         >
           <p className="text-sm text-gray-500 mb-3">
-            If you expose the Control UI through a reverse proxy, configure
-            trusted proxies so local-client checks cannot be spoofed. Comma
-            separated IPs.
+            If you expose the Control UI through a reverse proxy, configure trusted proxies so
+            local-client checks cannot be spoofed. Comma separated IPs.
           </p>
           {!config.gateway?.trustedProxies?.length && (
             <div className="rounded-lg bg-yellow-900/30 border border-yellow-700/50 px-4 py-2 mb-3">
               <p className="text-sm text-yellow-400">
-                No trusted proxies configured. Set your proxy IPs or keep the
-                Control UI local-only.
+                No trusted proxies configured. Set your proxy IPs or keep the Control UI local-only.
               </p>
             </div>
           )}
@@ -267,9 +255,7 @@ export function OpenClawPage() {
               />
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-sm text-gray-400 w-40">
-                Max subagents
-              </label>
+              <label className="text-sm text-gray-400 w-40">Max subagents</label>
               <input
                 type="number"
                 value={subagentMaxConcurrent}
@@ -348,16 +334,15 @@ export function OpenClawPage() {
           badge={gatewayBind !== "loopback" ? "DANGER" : undefined}
         >
           <p className="text-sm text-gray-500 mb-3">
-            Controls which network interface the OpenClaw gateway listens on.
-            Binding to <code>0.0.0.0</code> exposes the gateway to your entire
-            network.
+            Controls which network interface the OpenClaw gateway listens on. Binding to{" "}
+            <code>0.0.0.0</code> exposes the gateway to your entire network.
           </p>
           {gatewayBind !== "loopback" && (
             <div className="rounded-lg bg-red-900/30 border border-red-700/50 px-4 py-2 mb-3">
               <p className="text-sm text-red-400">
-                The gateway is bound to <code>{gatewayBind}</code>, which
-                exposes it beyond localhost. Unless you need remote access, set
-                this to &quot;loopback&quot; for security.
+                The gateway is bound to <code>{gatewayBind}</code>, which exposes it beyond
+                localhost. Unless you need remote access, set this to &quot;loopback&quot; for
+                security.
               </p>
             </div>
           )}
@@ -381,33 +366,22 @@ export function OpenClawPage() {
         <Section title="Gateway">
           <div className="space-y-2">
             <InfoRow label="Mode" value={config.gateway?.mode ?? "—"} />
-            <InfoRow
-              label="Port"
-              value={String(config.gateway?.port ?? "—")}
-            />
-            <InfoRow
-              label="Auth mode"
-              value={config.gateway?.auth?.mode ?? "—"}
-            />
-            <InfoRow
-              label="Tailscale"
-              value={config.gateway?.tailscale?.mode ?? "off"}
-            />
+            <InfoRow label="Port" value={String(config.gateway?.port ?? "—")} />
+            <InfoRow label="Auth mode" value={config.gateway?.auth?.mode ?? "—"} />
+            <InfoRow label="Tailscale" value={config.gateway?.tailscale?.mode ?? "off"} />
           </div>
         </Section>
 
         {/* Plugins (toggleable) */}
         <Section title="Plugins">
           <p className="text-sm text-gray-500 mb-3">
-            Enable or disable individual OpenClaw plugins. Use Access Control
-            for a master toggle that disables all plugins at once.
+            Enable or disable individual OpenClaw plugins. Use Access Control for a master toggle
+            that disables all plugins at once.
           </p>
           <div className="space-y-2">
-            {config.plugins?.entries &&
-            Object.keys(config.plugins.entries).length > 0 ? (
+            {config.plugins?.entries && Object.keys(config.plugins.entries).length > 0 ? (
               Object.entries(config.plugins.entries).map(([name, entry]) => {
-                const isEnabled =
-                  pluginOverrides[name] ?? (entry.enabled ?? false);
+                const isEnabled = pluginOverrides[name] ?? entry.enabled ?? false;
                 return (
                   <div
                     key={name}
@@ -439,18 +413,9 @@ export function OpenClawPage() {
         {/* Meta (read-only) */}
         <Section title="Instance Info">
           <div className="space-y-2">
-            <InfoRow
-              label="Last version"
-              value={config.meta?.lastTouchedVersion ?? "—"}
-            />
-            <InfoRow
-              label="Last updated"
-              value={config.meta?.lastTouchedAt ?? "—"}
-            />
-            <InfoRow
-              label="Workspace"
-              value={config.agents?.defaults?.workspace ?? "—"}
-            />
+            <InfoRow label="Last version" value={config.meta?.lastTouchedVersion ?? "—"} />
+            <InfoRow label="Last updated" value={config.meta?.lastTouchedAt ?? "—"} />
+            <InfoRow label="Workspace" value={config.agents?.defaults?.workspace ?? "—"} />
           </div>
         </Section>
       </div>
@@ -477,9 +442,7 @@ function Section({
       <div className="flex items-center gap-2 mb-4">
         <h3 className="text-sm font-medium text-gray-200">{title}</h3>
         {badge && (
-          <span
-            className={`px-2 py-0.5 text-xs font-medium rounded-full ${badgeStyles}`}
-          >
+          <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${badgeStyles}`}>
             {badge}
           </span>
         )}
@@ -489,13 +452,7 @@ function Section({
   );
 }
 
-function SaveButton({
-  onClick,
-  saving,
-}: {
-  onClick: () => void;
-  saving: boolean;
-}) {
+function SaveButton({ onClick, saving }: { onClick: () => void; saving: boolean }) {
   return (
     <button
       type="button"

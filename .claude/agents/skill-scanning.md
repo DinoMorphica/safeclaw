@@ -1,9 +1,8 @@
-
 # Skill Scanner — Static Security Analysis for AI Skill Definitions
 
 ## Overview
 
-The Skill Scanner provides **proactive, pre-execution** security analysis of markdown skill definitions. While SafeClaw's runtime Threat Analysis Engine (TC-* categories) classifies activities as they happen, the Skill Scanner inspects skill files *before* they're loaded — catching hidden threats that are invisible to human reviewers but fully processed by LLMs.
+The Skill Scanner provides **proactive, pre-execution** security analysis of markdown skill definitions. While SafeClaw's runtime Threat Analysis Engine (TC-* categories) classifies activities as they happen, the Skill Scanner inspects skill files *before\* they're loaded — catching hidden threats that are invisible to human reviewers but fully processed by LLMs.
 
 This is a **stateless, local-only** analysis tool. No database, no Socket.IO, no persistence. User pastes or uploads markdown → backend runs 15 analyzers → structured findings returned instantly.
 
@@ -55,58 +54,64 @@ SkillScanResult
     ├── scannedAt, contentLength, scanDurationMs
 ```
 
-## 15 Scan Categories (SK-* Namespace)
+## 15 Scan Categories (SK-\* Namespace)
 
-The SK-* namespace is intentionally separate from the runtime TC-* namespace. SK-* categories analyze **static markdown content** for pre-execution threats. TC-* categories classify **runtime agent activities** after they happen. Different contexts, different patterns, different namespaces.
+The SK-_ namespace is intentionally separate from the runtime TC-_ namespace. SK-_ categories analyze **static markdown content** for pre-execution threats. TC-_ categories classify **runtime agent activities** after they happen. Different contexts, different patterns, different namespaces.
 
-| ID | Category | What it detects | Severity | OWASP Ref |
-|----|----------|----------------|----------|-----------|
-| SK-HID | Hidden Content | HTML comments with instructions, zero-width Unicode (U+200B-200F, U+2060-2064), CSS display:none/opacity:0, bidi override characters (U+202A-202E, U+2066-2069) | CRITICAL | LLM01 |
-| SK-INJ | Prompt Injection | "ignore previous instructions", system prompt overrides, [INST]/\<\|im_start\|\> tokens, role reassignment, urgent override phrasing, persona manipulation | CRITICAL | LLM01 |
-| SK-EXE | Shell Execution | curl\|bash, eval(), exec(), npx -y, reverse shells (/dev/tcp, nc -e, mkfifo+nc), python/php/perl/ruby one-liners with system access | CRITICAL | LLM06 |
-| SK-EXF | Data Exfiltration | Paste sites (pastebin, transfer.sh), webhook URLs (Slack, Discord, Telegram), raw IP URLs. Reuses `EXFILTRATION_URLS` from `threat-patterns.ts` | HIGH | LLM02 |
-| SK-SEC | Embedded Secrets | 17 credential types — AWS, OpenAI, GitHub, GitLab, Stripe, SendGrid, Twilio, Slack, PEM keys, JWT, DB URLs. Reuses `scanForSecrets()` from `secret-scanner.ts` | CRITICAL | LLM02 |
-| SK-SFA | Sensitive File Refs | .ssh/, .env, .aws/, /etc/passwd, /etc/shadow, PEM/key files, SSH private keys. Reuses `SENSITIVE_PATH_RULES` from `threat-patterns.ts` with read severity | HIGH | LLM02 |
-| SK-MEM | Memory/Config Poisoning | SOUL.md, MEMORY.md, CLAUDE.md, .claude/, .cursorrules, .windsurfrules, .clinerules, CODEX.md — both references and explicit modification instructions | CRITICAL | LLM05 |
-| SK-SUP | Supply Chain Risk | Raw GitHub script URLs (.sh/.py/.js), npm/pip/gem/cargo/go/brew install commands, external script URLs | HIGH | LLM03 |
-| SK-B64 | Encoded Payloads | Base64 strings >40 chars, atob/btoa calls, Buffer.from base64, hex escape sequences (8+ bytes), String.fromCharCode (5+ codes), piped base64 decode | HIGH | LLM01 |
-| SK-IMG | Image Exfiltration | Markdown images with exfil query params (?data=, ?secret=, ?token=), raw IP image sources, variable interpolation/command substitution in image URLs, data URI images (inline base64 payloads), SVG with embedded scripts/event handlers/foreignObject, SVG data URIs, 1x1 tracking pixels, CSS-hidden image beacons, steganography tool references (steghide, zsteg, etc.), Canvas API pixel manipulation (getImageData, putImageData), double file extensions (.png.exe), excessive URL encoding | CRITICAL | LLM02 |
-| SK-SYS | System Prompt Extraction | "reveal system prompt", "repeat words above", "print everything above", "tell me your prompt" | HIGH | LLM01 |
-| SK-ARG | Argument Injection | Command substitution $(), variable expansion ${}, backtick substitution, shell metachar chains (;rm, \|bash, &&curl), GTFOBINS exploitation flags (--exec, --checkpoint-action) | CRITICAL | LLM01 |
-| SK-XTL | Cross-Tool Chaining | Read-then-exfiltrate multi-step patterns, numbered step-by-step tool invocations, direct tool function references (use_mcp_tool, read_file(), execute_command()) | HIGH | LLM05 |
-| SK-PRM | Excessive Permissions | "unrestricted access", "bypass security/restrictions", "no restrictions", root/admin access requests, "disable safety/checks/filters", "full access/control" | HIGH | LLM01 |
-| SK-STR | Suspicious Structure | Content >10K characters, imperative instruction density >30% of non-empty lines | MEDIUM | — |
+| ID     | Category                 | What it detects                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Severity | OWASP Ref |
+| ------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------- |
+| SK-HID | Hidden Content           | HTML comments with instructions, zero-width Unicode (U+200B-200F, U+2060-2064), CSS display:none/opacity:0, bidi override characters (U+202A-202E, U+2066-2069)                                                                                                                                                                                                                                                                                                                                    | CRITICAL | LLM01     |
+| SK-INJ | Prompt Injection         | "ignore previous instructions", system prompt overrides, [INST]/\<\|im_start\|\> tokens, role reassignment, urgent override phrasing, persona manipulation                                                                                                                                                                                                                                                                                                                                         | CRITICAL | LLM01     |
+| SK-EXE | Shell Execution          | curl\|bash, eval(), exec(), npx -y, reverse shells (/dev/tcp, nc -e, mkfifo+nc), python/php/perl/ruby one-liners with system access                                                                                                                                                                                                                                                                                                                                                                | CRITICAL | LLM06     |
+| SK-EXF | Data Exfiltration        | Paste sites (pastebin, transfer.sh), webhook URLs (Slack, Discord, Telegram), raw IP URLs. Reuses `EXFILTRATION_URLS` from `threat-patterns.ts`                                                                                                                                                                                                                                                                                                                                                    | HIGH     | LLM02     |
+| SK-SEC | Embedded Secrets         | 17 credential types — AWS, OpenAI, GitHub, GitLab, Stripe, SendGrid, Twilio, Slack, PEM keys, JWT, DB URLs. Reuses `scanForSecrets()` from `secret-scanner.ts`                                                                                                                                                                                                                                                                                                                                     | CRITICAL | LLM02     |
+| SK-SFA | Sensitive File Refs      | .ssh/, .env, .aws/, /etc/passwd, /etc/shadow, PEM/key files, SSH private keys. Reuses `SENSITIVE_PATH_RULES` from `threat-patterns.ts` with read severity                                                                                                                                                                                                                                                                                                                                          | HIGH     | LLM02     |
+| SK-MEM | Memory/Config Poisoning  | SOUL.md, MEMORY.md, CLAUDE.md, .claude/, .cursorrules, .windsurfrules, .clinerules, CODEX.md — both references and explicit modification instructions                                                                                                                                                                                                                                                                                                                                              | CRITICAL | LLM05     |
+| SK-SUP | Supply Chain Risk        | Raw GitHub script URLs (.sh/.py/.js), npm/pip/gem/cargo/go/brew install commands, external script URLs                                                                                                                                                                                                                                                                                                                                                                                             | HIGH     | LLM03     |
+| SK-B64 | Encoded Payloads         | Base64 strings >40 chars, atob/btoa calls, Buffer.from base64, hex escape sequences (8+ bytes), String.fromCharCode (5+ codes), piped base64 decode                                                                                                                                                                                                                                                                                                                                                | HIGH     | LLM01     |
+| SK-IMG | Image Exfiltration       | Markdown images with exfil query params (?data=, ?secret=, ?token=), raw IP image sources, variable interpolation/command substitution in image URLs, data URI images (inline base64 payloads), SVG with embedded scripts/event handlers/foreignObject, SVG data URIs, 1x1 tracking pixels, CSS-hidden image beacons, steganography tool references (steghide, zsteg, etc.), Canvas API pixel manipulation (getImageData, putImageData), double file extensions (.png.exe), excessive URL encoding | CRITICAL | LLM02     |
+| SK-SYS | System Prompt Extraction | "reveal system prompt", "repeat words above", "print everything above", "tell me your prompt"                                                                                                                                                                                                                                                                                                                                                                                                      | HIGH     | LLM01     |
+| SK-ARG | Argument Injection       | Command substitution $(), variable expansion ${}, backtick substitution, shell metachar chains (;rm, \|bash, &&curl), GTFOBINS exploitation flags (--exec, --checkpoint-action)                                                                                                                                                                                                                                                                                                                    | CRITICAL | LLM01     |
+| SK-XTL | Cross-Tool Chaining      | Read-then-exfiltrate multi-step patterns, numbered step-by-step tool invocations, direct tool function references (use_mcp_tool, read_file(), execute_command())                                                                                                                                                                                                                                                                                                                                   | HIGH     | LLM05     |
+| SK-PRM | Excessive Permissions    | "unrestricted access", "bypass security/restrictions", "no restrictions", root/admin access requests, "disable safety/checks/filters", "full access/control"                                                                                                                                                                                                                                                                                                                                       | HIGH     | LLM01     |
+| SK-STR | Suspicious Structure     | Content >10K characters, imperative instruction density >30% of non-empty lines                                                                                                                                                                                                                                                                                                                                                                                                                    | MEDIUM   | —         |
 
 ## Pattern Reuse from Runtime Engine
 
 The scanner reuses three existing modules to avoid pattern duplication:
 
-| Reused Module | Used By | What's Reused |
-|---------------|---------|---------------|
-| `secret-scanner.ts` → `scanForSecrets()` | SK-SEC analyzer | All 17 credential type regex patterns and severity levels |
-| `threat-patterns.ts` → `EXFILTRATION_URLS` | SK-EXF analyzer | 10 exfiltration destination patterns (pastebin, transfer.sh, ngrok, etc.) |
-| `threat-patterns.ts` → `SENSITIVE_PATH_RULES` | SK-SFA analyzer | 16 sensitive path patterns with read/write severity differentiation |
+| Reused Module                                 | Used By         | What's Reused                                                             |
+| --------------------------------------------- | --------------- | ------------------------------------------------------------------------- |
+| `secret-scanner.ts` → `scanForSecrets()`      | SK-SEC analyzer | All 17 credential type regex patterns and severity levels                 |
+| `threat-patterns.ts` → `EXFILTRATION_URLS`    | SK-EXF analyzer | 10 exfiltration destination patterns (pastebin, transfer.sh, ngrok, etc.) |
+| `threat-patterns.ts` → `SENSITIVE_PATH_RULES` | SK-SFA analyzer | 16 sensitive path patterns with read/write severity differentiation       |
 
 The SK-EXF analyzer runs its own 14 patterns first, then checks `EXFILTRATION_URLS` for any additional matches not already found.
 
 ## Key Design Decisions
 
 ### Stateless request/response
+
 No database, no Socket.IO, no persistence. Each scan is an independent POST → response. This keeps the scanner simple, eliminates cleanup, and means no migration needed.
 
 ### REST not Socket.IO
+
 The scan is a single request/response — no streaming, no real-time updates. Using REST keeps the Socket.IO event surface clean for the runtime monitoring that actually needs it.
 
 ### Client-side file read
+
 File upload uses `FileReader.readAsText()` on the client. The API only receives a JSON string body. No multipart upload handling, no temp files, no file system concerns.
 
 ### Line number tracking
+
 Each finding reports which line triggered it. Computed from the regex match index by counting newlines in the content before the match position (`getLineNumber()` helper).
 
 ### First-match-per-pattern
+
 To avoid noisy results, each pattern only reports its first match in the content. If "eval(" appears 50 times, one SK-EXE finding is generated, not 50.
 
 ### SK-STR heuristic thresholds
+
 - Content length: >10K characters flags as MEDIUM (large surface area)
 - Imperative density: >30% of non-empty lines matching imperative patterns flags as MEDIUM. The imperative pattern checks for lines starting with "you must", "always", "never", "execute", "run", "install", etc.
 
@@ -115,6 +120,7 @@ To avoid noisy results, each pattern only reports its first match in the content
 ### `POST /api/skill-scanner/scan`
 
 **Request:**
+
 ```json
 {
   "content": "# My Skill\n\nThis skill helps with...\n<!-- ignore previous instructions -->"
@@ -124,6 +130,7 @@ To avoid noisy results, each pattern only reports its first match in the content
 Validated by `skillScanRequestSchema`: string, min 1 char, max 500,000 chars.
 
 **Response:**
+
 ```json
 {
   "overallSeverity": "CRITICAL",
@@ -154,19 +161,19 @@ Three-section layout:
 2. **Results summary** — Overall severity banner (color-coded CRITICAL→CLEAN), 4 count cards (Critical/High/Medium/Low), scan metadata (chars, duration).
 3. **Findings list** — Severity filter pills (ALL/CRITICAL/HIGH/MEDIUM/LOW matching ThreatsPage color scheme), expandable finding cards showing: category badge (SK-XXX monospace), severity badge, reason, line number, OWASP ref, evidence (code-styled pre block), remediation advice.
 
-Category display metadata is in `apps/web/src/lib/skill-scan-categories.ts` — maps each SK-* ID to a display name, short name, and color class.
+Category display metadata is in `apps/web/src/lib/skill-scan-categories.ts` — maps each SK-\* ID to a display name, short name, and color class.
 
 ## Key Files
 
-| File | Purpose | Lines |
-|------|---------|-------|
-| `apps/cli/src/lib/skill-scanner-patterns.ts` | Regex patterns for 12 pattern-based categories (90+ patterns) | ~170 |
-| `apps/cli/src/lib/skill-scanner.ts` | Main scanning engine — 15 analyzer functions + `scanSkillDefinition()` | ~270 |
-| `apps/cli/src/server/routes.ts` | `POST /api/skill-scanner/scan` endpoint (added at end) | +10 |
-| `apps/web/src/pages/SkillScannerPage.tsx` | Full page component — input, results, finding cards | ~270 |
-| `apps/web/src/lib/skill-scan-categories.ts` | Category metadata map for 15 SK-* IDs | ~35 |
-| `packages/shared/src/types.ts` | `SkillScanCategoryId`, `SkillScanFinding`, `SkillScanResult` | +40 |
-| `packages/shared/src/schemas.ts` | Zod schemas: `skillScanRequestSchema`, `skillScanFindingSchema`, `skillScanResultSchema` | +30 |
+| File                                         | Purpose                                                                                  | Lines |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------- | ----- |
+| `apps/cli/src/lib/skill-scanner-patterns.ts` | Regex patterns for 12 pattern-based categories (90+ patterns)                            | ~170  |
+| `apps/cli/src/lib/skill-scanner.ts`          | Main scanning engine — 15 analyzer functions + `scanSkillDefinition()`                   | ~270  |
+| `apps/cli/src/server/routes.ts`              | `POST /api/skill-scanner/scan` endpoint (added at end)                                   | +10   |
+| `apps/web/src/pages/SkillScannerPage.tsx`    | Full page component — input, results, finding cards                                      | ~270  |
+| `apps/web/src/lib/skill-scan-categories.ts`  | Category metadata map for 15 SK-\* IDs                                                   | ~35   |
+| `packages/shared/src/types.ts`               | `SkillScanCategoryId`, `SkillScanFinding`, `SkillScanResult`                             | +40   |
+| `packages/shared/src/schemas.ts`             | Zod schemas: `skillScanRequestSchema`, `skillScanFindingSchema`, `skillScanResultSchema` | +30   |
 
 **Reused files (not modified):**
 | File | What's Reused |
@@ -225,16 +232,16 @@ pnpm dev:web   # terminal 2
 
 ## Relationship to Runtime Threat Analysis
 
-| Aspect | Skill Scanner (SK-*) | Runtime Threat Engine (TC-*) |
-|--------|---------------------|------------------------------|
-| When | Before skill is loaded | During agent execution |
-| Input | Static markdown text | Live activity events |
-| Source | User paste/upload | OpenClaw gateway + JSONL files |
-| Persistence | None (ephemeral) | SQLite (agent_activities table) |
-| Transport | REST POST | Socket.IO real-time |
-| Action | Informational only | Informational (feeds into dashboard, threat center) |
-| Categories | 15 (SK-HID through SK-STR) | 10 (TC-SEC through TC-MCP) |
-| Shared code | Reuses secret-scanner + threat-patterns | Owns secret-scanner + threat-patterns |
+| Aspect      | Skill Scanner (SK-\*)                   | Runtime Threat Engine (TC-\*)                       |
+| ----------- | --------------------------------------- | --------------------------------------------------- |
+| When        | Before skill is loaded                  | During agent execution                              |
+| Input       | Static markdown text                    | Live activity events                                |
+| Source      | User paste/upload                       | OpenClaw gateway + JSONL files                      |
+| Persistence | None (ephemeral)                        | SQLite (agent_activities table)                     |
+| Transport   | REST POST                               | Socket.IO real-time                                 |
+| Action      | Informational only                      | Informational (feeds into dashboard, threat center) |
+| Categories  | 15 (SK-HID through SK-STR)              | 10 (TC-SEC through TC-MCP)                          |
+| Shared code | Reuses secret-scanner + threat-patterns | Owns secret-scanner + threat-patterns               |
 
 ## References
 

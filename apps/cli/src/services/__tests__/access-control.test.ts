@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach, afterEach, type Mock } from "vitest";
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { OpenClawConfig } from "@safeclaw/shared";
 import { createTestDb } from "./test-helpers.js";
 
@@ -6,7 +6,6 @@ import { createTestDb } from "./test-helpers.js";
 
 let testDb: ReturnType<typeof createTestDb>;
 let mockConfig: OpenClawConfig | null = null;
-let writeConfigSpy: Mock<(updates: Partial<OpenClawConfig>) => OpenClawConfig | null>;
 
 const realSchema = await import("../../db/schema.js");
 
@@ -27,10 +26,7 @@ function deepMerge(
       typeof tgtVal === "object" &&
       !Array.isArray(tgtVal)
     ) {
-      result[key] = deepMerge(
-        tgtVal as Record<string, unknown>,
-        srcVal as Record<string, unknown>,
-      );
+      result[key] = deepMerge(tgtVal as Record<string, unknown>, srcVal as Record<string, unknown>);
     } else {
       result[key] = srcVal;
     }
@@ -56,7 +52,7 @@ vi.mock("../../lib/logger.js", () => ({
   },
 }));
 
-writeConfigSpy = vi.fn((updates: Partial<OpenClawConfig>) => {
+const writeConfigSpy = vi.fn((updates: Partial<OpenClawConfig>) => {
   if (!mockConfig) return null;
   mockConfig = deepMerge(
     mockConfig as unknown as Record<string, unknown>,
@@ -440,11 +436,7 @@ describe("access-control", () => {
             },
           },
           tools: {
-            deny: expect.arrayContaining([
-              "group:fs",
-              "mcp__github",
-              "mcp__sentry",
-            ]),
+            deny: expect.arrayContaining(["group:fs", "mcp__github", "mcp__sentry"]),
           },
         }),
       );
@@ -497,14 +489,10 @@ describe("access-control", () => {
       await applyAccessToggle("mcp_servers", false);
 
       // Verify the state was saved to access_config table
-      const rows = await testDb
-        .select()
-        .from(realSchema.accessConfig);
+      const rows = await testDb.select().from(realSchema.accessConfig);
 
       const savedRow = rows.find(
-        (r) =>
-          r.category === "mcp_servers" &&
-          r.key === "previous_plugin_state",
+        (r) => r.category === "mcp_servers" && r.key === "previous_plugin_state",
       );
       expect(savedRow).toBeDefined();
       const parsed = JSON.parse(savedRow!.value);

@@ -5,6 +5,7 @@
 SafeClaw is a **security management dashboard for AI agents**. It monitors, intercepts, and controls what AI agents (OpenClaw) can do on a user's system — a firewall between an AI agent and the OS.
 
 **MVP goal:** Free, local-only tool via `npx safeclaw start` providing:
+
 1. **Command Interception** – Block dangerous shell commands before execution
 2. **Session Monitoring** – Visual timeline of everything the agent does
 3. **Access Control** – Toggle what the agent can touch (files, network, MCP servers)
@@ -104,23 +105,23 @@ safeclaw-monorepo/
 
 ## Tech Stack
 
-| Layer | Technology | Notes |
-|-------|-----------|-------|
-| Package manager | pnpm >=9 | Workspace protocol (`workspace:*`) |
-| Runtime | Node.js >=20 | ES modules everywhere (`"type": "module"`) |
-| Backend | Fastify 5 | + @fastify/cors, @fastify/static |
-| Real-time | Socket.IO 4.8 | Typed events (ServerToClientEvents, ClientToServerEvents) |
-| Database | SQLite via better-sqlite3 | WAL mode, at `~/.safeclaw/safeclaw.db` |
-| ORM | Drizzle 0.38 | Schema in `apps/cli/src/db/schema.ts` |
-| Testing | Vitest 4.x | 46+ tests for exec-approval + access-control services |
-| Frontend | React 18 | React Router DOM 7, lucide-react icons |
-| Styling | Tailwind CSS 4 | Dark theme, custom neutral palette, red primary |
-| Build (web) | Vite 6 | Proxies `/api` and `/socket.io` to backend in dev |
-| Build (cli) | tsup 8.5 | ESM output, Node 20 target, bundles shared types |
-| Validation | Zod 3.24 | Shared schemas for all API payloads |
-| Logging | Pino 9 | Console (pino-pretty) + file (`~/.safeclaw/logs/debug.log`) |
-| CLI | Commander 13 | 6 commands + subcommands |
-| OpenClaw | WebSocket (ws) | Custom binary gateway protocol at `localhost:18789` |
+| Layer           | Technology                | Notes                                                       |
+| --------------- | ------------------------- | ----------------------------------------------------------- |
+| Package manager | pnpm >=9                  | Workspace protocol (`workspace:*`)                          |
+| Runtime         | Node.js >=20              | ES modules everywhere (`"type": "module"`)                  |
+| Backend         | Fastify 5                 | + @fastify/cors, @fastify/static                            |
+| Real-time       | Socket.IO 4.8             | Typed events (ServerToClientEvents, ClientToServerEvents)   |
+| Database        | SQLite via better-sqlite3 | WAL mode, at `~/.safeclaw/safeclaw.db`                      |
+| ORM             | Drizzle 0.38              | Schema in `apps/cli/src/db/schema.ts`                       |
+| Testing         | Vitest 4.x                | 46+ tests for exec-approval + access-control services       |
+| Frontend        | React 18                  | React Router DOM 7, lucide-react icons                      |
+| Styling         | Tailwind CSS 4            | Dark theme, custom neutral palette, red primary             |
+| Build (web)     | Vite 6                    | Proxies `/api` and `/socket.io` to backend in dev           |
+| Build (cli)     | tsup 8.5                  | ESM output, Node 20 target, bundles shared types            |
+| Validation      | Zod 3.24                  | Shared schemas for all API payloads                         |
+| Logging         | Pino 9                    | Console (pino-pretty) + file (`~/.safeclaw/logs/debug.log`) |
+| CLI             | Commander 13              | 6 commands + subcommands                                    |
+| OpenClaw        | WebSocket (ws)            | Custom binary gateway protocol at `localhost:18789`         |
 
 ---
 
@@ -154,34 +155,39 @@ cd apps/cli && pnpm db:studio   # Open Drizzle Studio GUI
 
 ## Data Directories
 
-| Path | Purpose |
-|------|---------|
-| `~/.safeclaw/config.json` | SafeClaw settings (port, autoOpenBrowser, userId, premium) |
-| `~/.safeclaw/safeclaw.db` | SQLite database (7 tables) |
-| `~/.safeclaw/logs/debug.log` | Pino debug logs |
-| `~/.openclaw/openclaw.json` | OpenClaw config (SafeClaw reads + modifies this) |
-| `~/.openclaw/identity/device.json` | Ed25519 device identity for gateway auth |
-| `~/.openclaw/exec-approvals.json` | Exec approval config (managed by OpenClaw) |
-| `~/.openclaw/agents/*/sessions/*.jsonl` | OpenClaw session journals (monitored by SessionWatcher) |
+| Path                                    | Purpose                                                    |
+| --------------------------------------- | ---------------------------------------------------------- |
+| `~/.safeclaw/config.json`               | SafeClaw settings (port, autoOpenBrowser, userId, premium) |
+| `~/.safeclaw/safeclaw.db`               | SQLite database (7 tables)                                 |
+| `~/.safeclaw/logs/debug.log`            | Pino debug logs                                            |
+| `~/.openclaw/openclaw.json`             | OpenClaw config (SafeClaw reads + modifies this)           |
+| `~/.openclaw/identity/device.json`      | Ed25519 device identity for gateway auth                   |
+| `~/.openclaw/exec-approvals.json`       | Exec approval config (managed by OpenClaw)                 |
+| `~/.openclaw/agents/*/sessions/*.jsonl` | OpenClaw session journals (monitored by SessionWatcher)    |
 
 ---
 
 ## Database Schema (7 tables in `apps/cli/src/db/schema.ts`)
 
 **command_logs** – Legacy intercepted commands
+
 - id (int PK), command, status (ALLOWED|BLOCKED|PENDING), threat_level, timestamp, session_id, decision_by
 
 **sessions** – SafeClaw sessions (not currently auto-managed)
+
 - id (text PK), started_at, ended_at, status (ACTIVE|ENDED)
 
 **access_config** – Audit trail for access control toggles
+
 - id (int PK), category, key, value, updated_at
 - Defaults: filesystem(on), mcp_servers(on), network(on), system_commands(off)
 
 **openclaw_sessions** – Tracked OpenClaw agent sessions
+
 - id (text PK), started_at, ended_at, status, model
 
 **agent_activities** – Individual agent actions (core table)
+
 - id (int PK), openclaw_session_id, activity_type, detail, raw_payload (JSON)
 - threat_level, timestamp, tool_name, target_path, run_id, phase
 - content_preview (max 10KB), read_content_preview (for write correlation)
@@ -189,10 +195,12 @@ cd apps/cli && pnpm db:studio   # Open Drizzle Studio GUI
 - Indexes: openclaw_session_id, threat_level, run_id
 
 **restricted_patterns** – Blocklist for exec approval enforcement
+
 - id (int PK), pattern (unique text), created_at
 - Glob patterns (e.g., `sudo *`, `rm -rf *`) checked by ExecApprovalService
 
 **exec_approvals** – Approval request records
+
 - id (text PK), command, cwd, security, session_key
 - requested_at, expires_at, decision, decided_by, decided_at, matched_pattern
 
@@ -202,20 +210,21 @@ Migrations run automatically on startup via `apps/cli/src/db/migrate.ts`.
 
 ## CLI Commands
 
-| Command | Options | Purpose |
-|---------|---------|---------|
-| `start` | `-p/--port`, `--no-open`, `--verbose` | Launch dashboard server |
-| `reset` | `--force` | Delete database + reset config |
-| `status` | `--json` | Show SafeClaw status |
-| `doctor` | — | 8 health checks (Node version, DB, ports, OpenClaw) |
-| `config list\|get\|set` | — | Manage config keys (port, autoOpenBrowser, premium) |
-| `logs` | `-n/--lines`, `-f/--follow`, `--clear` | View/follow/clear debug logs |
+| Command                 | Options                                | Purpose                                             |
+| ----------------------- | -------------------------------------- | --------------------------------------------------- |
+| `start`                 | `-p/--port`, `--no-open`, `--verbose`  | Launch dashboard server                             |
+| `reset`                 | `--force`                              | Delete database + reset config                      |
+| `status`                | `--json`                               | Show SafeClaw status                                |
+| `doctor`                | —                                      | 8 health checks (Node version, DB, ports, OpenClaw) |
+| `config list\|get\|set` | —                                      | Manage config keys (port, autoOpenBrowser, premium) |
+| `logs`                  | `-n/--lines`, `-f/--follow`, `--clear` | View/follow/clear debug logs                        |
 
 ---
 
 ## REST API (23 endpoints in `apps/cli/src/server/routes.ts`)
 
 **Health & Legacy:**
+
 ```
 GET  /api/health                         → { status, timestamp }
 GET  /api/commands?limit=N               → CommandLog[]
@@ -224,6 +233,7 @@ GET  /api/sessions                       → Session[]
 ```
 
 **Access Control:**
+
 ```
 GET  /api/access-control/state           → AccessControlState (toggles + MCP servers)
 GET  /api/config                         → access_config rows
@@ -232,12 +242,14 @@ PUT  /api/config/access/mcp-server       → { serverName, enabled }
 ```
 
 **Settings:**
+
 ```
 GET  /api/settings                       → SafeClawConfig
 PUT  /api/settings                       → Partial<SafeClawConfig>
 ```
 
 **OpenClaw:**
+
 ```
 GET  /api/openclaw/config                → OpenClawConfig
 PUT  /api/openclaw/config                → Partial<OpenClawConfig>
@@ -249,6 +261,7 @@ GET  /api/openclaw/status                → { connectionStatus, gatewayPort, ac
 ```
 
 **Exec Approvals:**
+
 ```
 GET  /api/exec-approvals/pending         → ExecApprovalEntry[]
 GET  /api/exec-approvals/history?limit   → ExecApprovalEntry[]
@@ -256,6 +269,7 @@ PUT  /api/exec-approvals/:id/decision    → { decision: allow-once|allow-always
 ```
 
 **Restricted Patterns (Blocklist):**
+
 ```
 GET    /api/allowlist                    → { patterns[] }
 POST   /api/allowlist                    → { pattern }
@@ -278,15 +292,15 @@ All typed in `packages/shared/src/types.ts` (ServerToClientEvents, ClientToServe
 
 ## Frontend Pages
 
-| Route | Page | Key Features |
-|-------|------|-------------|
-| `/` | DashboardPage | Stats cards (commands, threats, approvals), threat severity breakdown, recent activities |
-| `/interception` | InterceptionPage | Pending approvals with countdown (Allow Once/Unrestrict/Deny), restricted patterns CRUD, history |
-| `/sessions` | SessionsPage | OpenClaw sessions list, activity timeline grouped by runId (interaction), threat badges |
-| `/threats` | ThreatsPage | Filter by severity + resolved status, summary cards, expandable cards with OWASP refs, secrets, remediation, resolve toggle |
-| `/access` | AccessControlPage | 4 category toggles (filesystem/mcp/network/system), per-MCP-server toggles, workspace config, Docker sandbox settings |
-| `/openclaw` | OpenClawPage | Model selection, gateway config, concurrency, WhatsApp config, plugin toggles |
-| `/settings` | SettingsPage | Port, auto-open browser, version, data directory info |
+| Route           | Page              | Key Features                                                                                                                |
+| --------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `/`             | DashboardPage     | Stats cards (commands, threats, approvals), threat severity breakdown, recent activities                                    |
+| `/interception` | InterceptionPage  | Pending approvals with countdown (Allow Once/Unrestrict/Deny), restricted patterns CRUD, history                            |
+| `/sessions`     | SessionsPage      | OpenClaw sessions list, activity timeline grouped by runId (interaction), threat badges                                     |
+| `/threats`      | ThreatsPage       | Filter by severity + resolved status, summary cards, expandable cards with OWASP refs, secrets, remediation, resolve toggle |
+| `/access`       | AccessControlPage | 4 category toggles (filesystem/mcp/network/system), per-MCP-server toggles, workspace config, Docker sandbox settings       |
+| `/openclaw`     | OpenClawPage      | Model selection, gateway config, concurrency, WhatsApp config, plugin toggles                                               |
+| `/settings`     | SettingsPage      | Port, auto-open browser, version, data directory info                                                                       |
 
 **Component hierarchy:** App → Layout (Sidebar + ConnectionStatus) → Page → ActivityDetails (6 tool-specific renderers: File, Shell, Web, Message, Tool, Unknown)
 
@@ -303,6 +317,7 @@ SafeClaw has three security systems that operate **independently**:
 **Purpose:** Classify activities by threat level for UI display. Does NOT block anything.
 
 **Components:**
+
 - `threat-classifier.ts` – 10 category analyzers returning ThreatFinding objects
 - `threat-patterns.ts` – 200+ regex patterns across 6 categories
 - `secret-scanner.ts` – 15+ credential type detectors (AWS, OpenAI, GitHub, Stripe, PEM keys, DB URLs, JWT, etc.)
@@ -310,18 +325,18 @@ SafeClaw has three security systems that operate **independently**:
 
 **10 Threat Categories:**
 
-| ID | Name | Detects | Severity |
-|----|------|---------|----------|
-| TC-SEC | Secret Exposure | Credentials in outbound content | CRITICAL |
-| TC-EXF | Data Exfiltration | Paste sites, webhooks, suspicious URLs | HIGH |
-| TC-INJ | Prompt Injection | Adversarial instructions ("ignore previous") | CRITICAL/MEDIUM |
-| TC-DES | Destructive Ops | rm -rf /, DROP TABLE, fork bombs | CRITICAL/HIGH |
-| TC-ESC | Privilege Escalation | sudo, su, usermod, chmod setuid | HIGH |
-| TC-SUP | Supply Chain Risk | curl\|bash, npm install suspicious pkgs | HIGH/MEDIUM |
-| TC-SFA | Sensitive File Access | .ssh/, .env, .aws/, /etc/passwd | HIGH/MEDIUM |
-| TC-SYS | System Modification | Writes to /etc/, /usr/bin/, /System/ | CRITICAL |
-| TC-NET | Network Activity | Raw IPs, reverse shells, netcat | HIGH/MEDIUM |
-| TC-MCP | MCP/Tool Poisoning | Prompt injection in MCP responses | HIGH |
+| ID     | Name                  | Detects                                      | Severity        |
+| ------ | --------------------- | -------------------------------------------- | --------------- |
+| TC-SEC | Secret Exposure       | Credentials in outbound content              | CRITICAL        |
+| TC-EXF | Data Exfiltration     | Paste sites, webhooks, suspicious URLs       | HIGH            |
+| TC-INJ | Prompt Injection      | Adversarial instructions ("ignore previous") | CRITICAL/MEDIUM |
+| TC-DES | Destructive Ops       | rm -rf /, DROP TABLE, fork bombs             | CRITICAL/HIGH   |
+| TC-ESC | Privilege Escalation  | sudo, su, usermod, chmod setuid              | HIGH            |
+| TC-SUP | Supply Chain Risk     | curl\|bash, npm install suspicious pkgs      | HIGH/MEDIUM     |
+| TC-SFA | Sensitive File Access | .ssh/, .env, .aws/, /etc/passwd              | HIGH/MEDIUM     |
+| TC-SYS | System Modification   | Writes to /etc/, /usr/bin/, /System/         | CRITICAL        |
+| TC-NET | Network Activity      | Raw IPs, reverse shells, netcat              | HIGH/MEDIUM     |
+| TC-MCP | MCP/Tool Poisoning    | Prompt injection in MCP responses            | HIGH            |
 
 Each finding includes: categoryId, severity, evidence, reasoning, owaspRef, remediation.
 
@@ -334,6 +349,7 @@ Each finding includes: categoryId, severity, evidence, reasoning, owaspRef, reme
 **Service:** `exec-approval-service.ts` (539 lines, 46+ tests)
 
 **Flow:**
+
 1. OpenClaw sends `exec.approval.requested` via WebSocket gateway
 2. ExecApprovalService checks command against `restricted_patterns` table (glob matching)
 3. **No match** → auto-approve with `allow-once`, send back immediately
@@ -351,6 +367,7 @@ Each finding includes: categoryId, severity, evidence, reasoning, owaspRef, reme
 **Service:** `access-control.ts` (337 lines)
 
 **Toggle mappings:**
+
 - `filesystem` → `group:fs`
 - `system_commands` → `group:runtime`
 - `network` → `group:web` + `browser.enabled`
@@ -367,18 +384,23 @@ A command can be CRITICAL threat level but auto-approved (not in blocklist). A N
 ## Key Services
 
 ### OpenClawMonitor (`services/openclaw-monitor.ts`, 486 lines)
+
 Central orchestrator. Creates OpenClawClient + SessionWatcher + ExecApprovalService. Handles: activity ingestion → threat analysis → DB persistence → Socket.IO broadcast. Manages session lifecycle (start/end). Singleton pattern.
 
 ### OpenClawClient (`lib/openclaw-client.ts`, 846 lines)
+
 WebSocket client to OpenClaw gateway at localhost:18789. Custom binary protocol (req/res/event). Auth via Ed25519 keys. Subscribes to: agent, chat, lifecycle, exec.approval events. Emits typed events: activity, sessionStart, sessionEnd, statusChange, execApproval.
 
 ### SessionWatcher (`lib/session-watcher.ts`, 445 lines)
+
 Monitors `~/.openclaw/agents/*/sessions/*.jsonl` files. Parses tool calls/results from JSONL entries. Maps 15+ OpenClaw tools to SafeClaw activity types (read_file→file_read, execute_command→shell_command, etc.). Extracts content previews (max 10KB). Caches read content for write correlation (before/after diffs, 5-min expiry).
 
 ### ExecApprovalService (`services/exec-approval-service.ts`, 539 lines)
-Blocklist enforcement. Loads restricted_patterns from DB. Glob-to-regex matching (*, ? wildcards, case-insensitive). In-memory pending queue with setTimeout timers. Syncs pattern changes with OpenClaw's allowlist via gateway API.
+
+Blocklist enforcement. Loads restricted_patterns from DB. Glob-to-regex matching (\*, ? wildcards, case-insensitive). In-memory pending queue with setTimeout timers. Syncs pattern changes with OpenClaw's allowlist via gateway API.
 
 ### AccessControlService (`services/access-control.ts`, 337 lines)
+
 Derives current state from OpenClaw's config. Applies toggles by adding/removing groups from tools.deny. Per-MCP-server granular control. Audit trail in access_config table.
 
 ---
@@ -398,6 +420,7 @@ All types have corresponding Zod schemas in `schemas.ts` with `.passthrough()` f
 ## Key Conventions
 
 **Code style:**
+
 - ES modules everywhere (`import`/`export`, `"type": "module"`)
 - TypeScript strict mode
 - Shared types from `@safeclaw/shared` — never duplicate
@@ -405,6 +428,7 @@ All types have corresponding Zod schemas in `schemas.ts` with `.passthrough()` f
 - Pino for logging (never `console.log` in production)
 
 **Naming:**
+
 - DB columns: `snake_case`
 - TS interfaces/types: `PascalCase`
 - Socket events: `safeclaw:camelCase`
@@ -413,6 +437,7 @@ All types have corresponding Zod schemas in `schemas.ts` with `.passthrough()` f
 **Singletons:** OpenClawMonitor, ExecApprovalService, Drizzle DB, Socket.IO server — all use lazy init + getter pattern.
 
 ### Adding new features
+
 1. Types in `packages/shared/src/types.ts`
 2. Zod schemas in `packages/shared/src/schemas.ts` (if needed)
 3. DB schema in `apps/cli/src/db/schema.ts` (if persistence needed)
@@ -422,6 +447,7 @@ All types have corresponding Zod schemas in `schemas.ts` with `.passthrough()` f
 7. **Rebuild shared first** (`pnpm build:shared`) before other packages see new types
 
 ### Adding a new page
+
 1. Create `apps/cli/web/pages/NewPage.tsx`
 2. Add route in `apps/cli/web/App.tsx`
 3. Add sidebar link in `apps/cli/web/components/Sidebar.tsx`
@@ -454,6 +480,7 @@ pnpm test
 ## Test Coverage
 
 **Tested (comprehensive):**
+
 - ExecApprovalService: 46+ tests (730 lines) — pattern matching, auto-approve, manual approval, unrestrict/re-restrict, timeout, gateway communication, DB persistence, OpenClaw sync, stats, concurrency
 - AccessControlService: 699 lines — state derivation, toggles, MCP server toggles, DB audit, OpenClaw sync, error handling
 

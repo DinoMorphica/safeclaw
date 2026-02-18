@@ -28,9 +28,7 @@ export function ActivityDetailPanel({ phases }: Props) {
       {/* Security Indicators */}
       {indicators.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-gray-500 font-medium">
-            Threat Findings ({indicators.length})
-          </p>
+          <p className="text-xs text-gray-500 font-medium">Threat Findings ({indicators.length})</p>
           {indicators.map((indicator, i) => (
             <div
               key={i}
@@ -61,9 +59,7 @@ export function ActivityDetailPanel({ phases }: Props) {
       {parsed.runId && (
         <div className="p-2 bg-gray-800 rounded">
           <p className="text-xs text-gray-500 mb-1">Interaction Run ID:</p>
-          <code className="text-xs text-gray-400 break-all font-mono">
-            {parsed.runId}
-          </code>
+          <code className="text-xs text-gray-400 break-all font-mono">{parsed.runId}</code>
         </div>
       )}
 
@@ -77,10 +73,7 @@ export function ActivityDetailPanel({ phases }: Props) {
             {phases.map((activity, idx) => {
               const activityParsed = parseRawPayload(activity.rawPayload);
               return (
-                <div
-                  key={activity.id}
-                  className="flex items-center gap-2 text-xs text-gray-400"
-                >
+                <div key={activity.id} className="flex items-center gap-2 text-xs text-gray-400">
                   <span className="text-gray-600">{idx + 1}.</span>
                   <span
                     className={`px-1.5 py-0.5 rounded font-mono ${
@@ -105,9 +98,7 @@ export function ActivityDetailPanel({ phases }: Props) {
                   <span className="text-gray-600 shrink-0">
                     {new Date(activity.timestamp).toLocaleTimeString()}
                   </span>
-                  {activityParsed.isError && (
-                    <span className="text-red-400 text-xs">⚠ error</span>
-                  )}
+                  {activityParsed.isError && <span className="text-red-400 text-xs">⚠ error</span>}
                   {activity.threatLevel !== "NONE" && (
                     <span
                       className={`px-1 py-0.5 rounded text-[10px] font-medium shrink-0 ${
@@ -137,9 +128,7 @@ export function ActivityDetailPanel({ phases }: Props) {
       {parsed.toolCallId && (
         <div className="p-2 bg-gray-800 rounded">
           <p className="text-xs text-gray-500 mb-1">Tool Call ID:</p>
-          <code className="text-xs text-gray-400 break-all font-mono">
-            {parsed.toolCallId}
-          </code>
+          <code className="text-xs text-gray-400 break-all font-mono">{parsed.toolCallId}</code>
         </div>
       )}
 

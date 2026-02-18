@@ -18,12 +18,9 @@ const THREAT_TEXT_COLORS: Record<ThreatLevel, string> = {
 };
 
 export function SessionsPage() {
-  const [openclawSessions, setOpenclawSessions] = useState<OpenClawSession[]>(
-    [],
-  );
+  const [openclawSessions, setOpenclawSessions] = useState<OpenClawSession[]>([]);
   const [activities, setActivities] = useState<AgentActivity[]>([]);
-  const [monitorStatus, setMonitorStatus] =
-    useState<OpenClawMonitorStatus | null>(null);
+  const [monitorStatus, setMonitorStatus] = useState<OpenClawMonitorStatus | null>(null);
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -72,6 +69,8 @@ export function SessionsPage() {
 
   useEffect(() => {
     if (expandedSession) {
+      // Clear stale activities before fetching new session data
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActivities([]);
       socket.emit("safeclaw:getOpenclawActivities", {
         sessionId: expandedSession,
@@ -108,13 +107,9 @@ export function SessionsPage() {
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className={`h-2.5 w-2.5 rounded-full ${connectionColor}`} />
-          <span className="text-sm text-gray-300">
-            OpenClaw Gateway: {connectionLabel}
-          </span>
+          <span className="text-sm text-gray-300">OpenClaw Gateway: {connectionLabel}</span>
           {monitorStatus?.gatewayPort && (
-            <span className="text-xs text-gray-500">
-              (port {monitorStatus.gatewayPort})
-            </span>
+            <span className="text-xs text-gray-500">(port {monitorStatus.gatewayPort})</span>
           )}
         </div>
         {monitorStatus?.connectionStatus !== "connected" &&
@@ -133,9 +128,7 @@ export function SessionsPage() {
         sessions={openclawSessions}
         activities={activities}
         expandedSession={expandedSession}
-        onToggleSession={(id) =>
-          setExpandedSession((prev) => (prev === id ? null : id))
-        }
+        onToggleSession={(id) => setExpandedSession((prev) => (prev === id ? null : id))}
         loading={loading}
       />
     </div>
@@ -181,17 +174,13 @@ function OpenClawSessionsTab({
     <div className="space-y-4">
       {activeSessions.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-gray-400 mb-2">
-            Active Sessions
-          </h3>
+          <h3 className="text-sm font-medium text-gray-400 mb-2">Active Sessions</h3>
           <div className="space-y-2">
             {activeSessions.map((session) => (
               <SessionCard
                 key={session.id}
                 session={session}
-                activities={
-                  expandedSession === session.id ? activities : []
-                }
+                activities={expandedSession === session.id ? activities : []}
                 expanded={expandedSession === session.id}
                 onToggle={() => onToggleSession(session.id)}
               />
@@ -201,17 +190,13 @@ function OpenClawSessionsTab({
       )}
       {pastSessions.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-gray-400 mb-2">
-            Past Sessions
-          </h3>
+          <h3 className="text-sm font-medium text-gray-400 mb-2">Past Sessions</h3>
           <div className="space-y-2">
             {pastSessions.map((session) => (
               <SessionCard
                 key={session.id}
                 session={session}
-                activities={
-                  expandedSession === session.id ? activities : []
-                }
+                activities={expandedSession === session.id ? activities : []}
                 expanded={expandedSession === session.id}
                 onToggle={() => onToggleSession(session.id)}
               />
@@ -235,17 +220,13 @@ function SessionCard({
   onToggle: () => void;
 }) {
   const isActive = session.status === "ACTIVE";
-  const highRisk =
-    (session.threatSummary.HIGH ?? 0) + (session.threatSummary.CRITICAL ?? 0);
+  const highRisk = (session.threatSummary.HIGH ?? 0) + (session.threatSummary.CRITICAL ?? 0);
 
   // State for tracking which interaction is expanded
   const [expandedInteraction, setExpandedInteraction] = useState<string | null>(null);
 
   // Group activities by interaction (runId) - newest first
-  const groupedInteractions = useMemo(
-    () => groupActivitiesByToolCall(activities),
-    [activities],
-  );
+  const groupedInteractions = useMemo(() => groupActivitiesByToolCall(activities), [activities]);
 
   return (
     <div className="rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
@@ -259,14 +240,8 @@ function SessionCard({
             className={`h-2.5 w-2.5 rounded-full ${isActive ? "bg-success animate-pulse" : "bg-gray-600"}`}
           />
           <div className="text-left">
-            <span className="text-sm font-mono text-gray-200">
-              {session.id.slice(0, 12)}
-            </span>
-            {session.model && (
-              <span className="ml-2 text-xs text-gray-500">
-                {session.model}
-              </span>
-            )}
+            <span className="text-sm font-mono text-gray-200">{session.id.slice(0, 12)}</span>
+            {session.model && <span className="ml-2 text-xs text-gray-500">{session.model}</span>}
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -275,15 +250,11 @@ function SessionCard({
               {highRisk} high risk
             </span>
           )}
-          <span className="text-xs text-gray-500">
-            {session.activityCount} activities
-          </span>
+          <span className="text-xs text-gray-500">{session.activityCount} activities</span>
           <span className="text-xs text-gray-500">
             {new Date(session.startedAt).toLocaleString()}
           </span>
-          <span
-            className={`text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
-          >
+          <span className={`text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}>
             v
           </span>
         </div>
@@ -292,9 +263,7 @@ function SessionCard({
       {expanded && (
         <div className="border-t border-gray-800 p-4">
           <div className="flex gap-2 mb-3">
-            {(
-              ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"] as ThreatLevel[]
-            ).map((level) => {
+            {(["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"] as ThreatLevel[]).map((level) => {
               const count = session.threatSummary[level] ?? 0;
               if (count === 0) return null;
               return (
@@ -322,9 +291,7 @@ function SessionCard({
                       phases={interaction.activities}
                       expanded={expandedInteraction === key}
                       onToggle={() =>
-                        setExpandedInteraction(
-                          expandedInteraction === key ? null : key,
-                        )
+                        setExpandedInteraction(expandedInteraction === key ? null : key)
                       }
                     />
                     {expandedInteraction === key && (

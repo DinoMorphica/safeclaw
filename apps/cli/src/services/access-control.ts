@@ -19,10 +19,7 @@ const TOOL_GROUP_MAP: Record<string, string> = {
 /**
  * Derive per-server MCP states from plugin entries and tools.deny list.
  */
-function deriveMcpServerStates(
-  config: OpenClawConfig,
-  denyList: string[],
-): McpServerState[] {
+function deriveMcpServerStates(config: OpenClawConfig, denyList: string[]): McpServerState[] {
   const pluginEntries = config.plugins?.entries ?? {};
   return Object.keys(pluginEntries).map((name) => {
     const pluginEnabled = pluginEntries[name].enabled !== false;
@@ -59,15 +56,13 @@ export function deriveAccessState(): AccessControlState {
 
   const filesystemEnabled = !denyList.includes("group:fs");
   const systemCommandsEnabled = !denyList.includes("group:runtime");
-  const networkEnabled =
-    !denyList.includes("group:web") && config.browser?.enabled !== false;
+  const networkEnabled = !denyList.includes("group:web") && config.browser?.enabled !== false;
 
   // MCP: enabled if there are no plugins, or at least one plugin is enabled
   const pluginEntries = config.plugins?.entries ?? {};
   const pluginNames = Object.keys(pluginEntries);
   const mcpEnabled =
-    pluginNames.length === 0 ||
-    pluginNames.some((name) => pluginEntries[name].enabled !== false);
+    pluginNames.length === 0 || pluginNames.some((name) => pluginEntries[name].enabled !== false);
 
   const toggles: AccessToggleState[] = [
     { category: "filesystem", enabled: filesystemEnabled },
@@ -140,11 +135,7 @@ export async function applyMcpServerToggle(
 /**
  * Add or remove a tool group from tools.deny.
  */
-function applyToolGroupToggle(
-  config: OpenClawConfig,
-  category: string,
-  enabled: boolean,
-): void {
+function applyToolGroupToggle(config: OpenClawConfig, category: string, enabled: boolean): void {
   const groupName = TOOL_GROUP_MAP[category];
   if (!groupName) return;
 
@@ -189,10 +180,7 @@ function applyNetworkToggle(config: OpenClawConfig, enabled: boolean): void {
  * Toggle MCP servers: disable/enable all plugins and sync tools.deny.
  * Saves previous states before disabling so they can be restored.
  */
-async function applyMcpToggle(
-  config: OpenClawConfig,
-  enabled: boolean,
-): Promise<void> {
+async function applyMcpToggle(config: OpenClawConfig, enabled: boolean): Promise<void> {
   const pluginEntries = config.plugins?.entries ?? {};
   const pluginNames = Object.keys(pluginEntries);
 
@@ -239,9 +227,7 @@ async function applyMcpToggle(
 
     // Remove mcp__<name> entries from tools.deny for all plugins
     const mcpDenyPatterns = new Set(pluginNames.map((n) => `mcp__${n}`));
-    const filteredDeny = currentDeny.filter(
-      (entry) => !mcpDenyPatterns.has(entry),
-    );
+    const filteredDeny = currentDeny.filter((entry) => !mcpDenyPatterns.has(entry));
 
     writeOpenClawConfig({
       plugins: { entries: restoredEntries },
@@ -250,9 +236,7 @@ async function applyMcpToggle(
   }
 }
 
-async function savePreviousPluginState(
-  stateMap: Record<string, boolean>,
-): Promise<void> {
+async function savePreviousPluginState(stateMap: Record<string, boolean>): Promise<void> {
   const db = getDb();
   const existing = await db
     .select()
@@ -286,10 +270,7 @@ async function savePreviousPluginState(
   }
 }
 
-async function loadPreviousPluginState(): Promise<Record<
-  string,
-  boolean
-> | null> {
+async function loadPreviousPluginState(): Promise<Record<string, boolean> | null> {
   const db = getDb();
   const rows = await db
     .select()
@@ -313,10 +294,7 @@ async function loadPreviousPluginState(): Promise<Record<
 /**
  * Update SafeClaw's access_config table as an audit trail.
  */
-async function updateAuditDb(
-  category: string,
-  enabled: boolean,
-): Promise<void> {
+async function updateAuditDb(category: string, enabled: boolean): Promise<void> {
   const db = getDb();
   try {
     await db
@@ -326,10 +304,7 @@ async function updateAuditDb(
         updatedAt: sql`datetime('now')`,
       })
       .where(
-        and(
-          eq(schema.accessConfig.category, category),
-          eq(schema.accessConfig.key, "enabled"),
-        ),
+        and(eq(schema.accessConfig.category, category), eq(schema.accessConfig.key, "enabled")),
       );
   } catch (err) {
     logger.warn({ err, category, enabled }, "Failed to update audit DB");

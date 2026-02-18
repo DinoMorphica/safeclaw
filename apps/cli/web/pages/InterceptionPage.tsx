@@ -45,9 +45,7 @@ function PendingApprovalCard({
     <div className="rounded-xl border border-warning/30 bg-gray-900 p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <code className="text-sm text-gray-200 break-all">
-            {entry.command}
-          </code>
+          <code className="text-sm text-gray-200 break-all">{entry.command}</code>
           <div className="flex items-center gap-3 mt-2">
             <span className="text-xs text-gray-500">{entry.cwd}</span>
             <span
@@ -91,30 +89,23 @@ export function InterceptionPage() {
   const [allowlist, setAllowlist] = useState<string[]>([]);
   const [newPattern, setNewPattern] = useState("");
   const [loading, setLoading] = useState(true);
-  const [gatewayStatus, setGatewayStatus] =
-    useState<OpenClawMonitorStatus | null>(null);
+  const [gatewayStatus, setGatewayStatus] = useState<OpenClawMonitorStatus | null>(null);
 
-  const handleApprovalRequested = useCallback(
-    (entry: ExecApprovalEntry) => {
-      setPending((prev) => {
-        if (prev.some((p) => p.id === entry.id)) return prev;
-        return [entry, ...prev];
-      });
-      setLoading(false);
-    },
-    [],
-  );
+  const handleApprovalRequested = useCallback((entry: ExecApprovalEntry) => {
+    setPending((prev) => {
+      if (prev.some((p) => p.id === entry.id)) return prev;
+      return [entry, ...prev];
+    });
+    setLoading(false);
+  }, []);
 
-  const handleApprovalResolved = useCallback(
-    (entry: ExecApprovalEntry) => {
-      setPending((prev) => prev.filter((p) => p.id !== entry.id));
-      setHistory((prev) => {
-        if (prev.some((h) => h.id === entry.id)) return prev;
-        return [entry, ...prev];
-      });
-    },
-    [],
-  );
+  const handleApprovalResolved = useCallback((entry: ExecApprovalEntry) => {
+    setPending((prev) => prev.filter((p) => p.id !== entry.id));
+    setHistory((prev) => {
+      if (prev.some((h) => h.id === entry.id)) return prev;
+      return [entry, ...prev];
+    });
+  }, []);
 
   const handleHistoryBatch = useCallback((batch: ExecApprovalEntry[]) => {
     // Set history directly from batch (already sorted newest-first)
@@ -196,14 +187,10 @@ export function InterceptionPage() {
           <div className="flex items-center gap-2">
             <span
               className={`h-2 w-2 rounded-full shrink-0 ${
-                isGatewayConnecting
-                  ? "bg-yellow-400 animate-pulse"
-                  : "bg-red-400"
+                isGatewayConnecting ? "bg-yellow-400 animate-pulse" : "bg-red-400"
               }`}
             />
-            <p
-              className={`text-sm ${isGatewayConnecting ? "text-yellow-400" : "text-red-400"}`}
-            >
+            <p className={`text-sm ${isGatewayConnecting ? "text-yellow-400" : "text-red-400"}`}>
               {isGatewayConnecting
                 ? "Connecting to OpenClaw gateway... Exec approvals cannot be processed until connected."
                 : "OpenClaw gateway not connected. Exec approvals cannot be processed \u2014 commands will fall back to the askFallback policy (deny by default)."}
@@ -214,12 +201,10 @@ export function InterceptionPage() {
 
       {/* Section 1: Restricted Commands */}
       <div className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-300 mb-4">
-          Restricted Commands
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-300 mb-4">Restricted Commands</h3>
         <p className="text-sm text-gray-500 mb-3">
-          Commands matching these patterns will require your approval before
-          OpenClaw can execute them. Everything else runs automatically.
+          Commands matching these patterns will require your approval before OpenClaw can execute
+          them. Everything else runs automatically.
         </p>
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
           <div className="flex gap-2 mb-4">
@@ -241,8 +226,7 @@ export function InterceptionPage() {
           </div>
           {allowlist.length === 0 ? (
             <p className="text-sm text-gray-500">
-              No restricted patterns. All commands will auto-execute without
-              approval.
+              No restricted patterns. All commands will auto-execute without approval.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -275,11 +259,7 @@ export function InterceptionPage() {
           </h3>
           <div className="space-y-3">
             {pending.map((entry) => (
-              <PendingApprovalCard
-                key={entry.id}
-                entry={entry}
-                onDecision={handleDecision}
-              />
+              <PendingApprovalCard key={entry.id} entry={entry} onDecision={handleDecision} />
             ))}
           </div>
         </div>
@@ -287,17 +267,14 @@ export function InterceptionPage() {
 
       {/* Section 3: Command History */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-300 mb-4">
-          Command History
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-300 mb-4">Command History</h3>
         {loading ? (
           <p className="text-gray-500">Loading...</p>
         ) : history.length === 0 && pending.length === 0 ? (
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-8">
             <p className="text-gray-400">
-              No commands intercepted yet. Add restricted command patterns above,
-              then commands matching those patterns will appear here for your
-              approval.
+              No commands intercepted yet. Add restricted command patterns above, then commands
+              matching those patterns will appear here for your approval.
             </p>
           </div>
         ) : (
@@ -314,11 +291,9 @@ export function InterceptionPage() {
                     ? "TIMED OUT"
                     : entry.decidedBy === "access-control"
                       ? "BLOCKED (ACCESS)"
-                      : DECISION_LABELS[entry.decision ?? "deny"] ?? "UNKNOWN"}
+                      : (DECISION_LABELS[entry.decision ?? "deny"] ?? "UNKNOWN")}
                 </span>
-                <code className="text-sm text-gray-300 flex-1 truncate">
-                  {entry.command}
-                </code>
+                <code className="text-sm text-gray-300 flex-1 truncate">{entry.command}</code>
                 <span className="text-xs text-gray-600 whitespace-nowrap">
                   {entry.decidedBy === "auto-approve" || entry.decidedBy === "auto-deny"
                     ? "auto"
@@ -327,9 +302,7 @@ export function InterceptionPage() {
                       : "user"}
                 </span>
                 <span className="text-xs text-gray-500 whitespace-nowrap">
-                  {entry.decidedAt
-                    ? new Date(entry.decidedAt).toLocaleTimeString()
-                    : ""}
+                  {entry.decidedAt ? new Date(entry.decidedAt).toLocaleTimeString() : ""}
                 </span>
               </div>
             ))}

@@ -17,13 +17,39 @@ const THREAT_BG_COLORS: Record<string, string> = {
   LOW: "bg-blue-900/20 border-blue-800",
 };
 
-const SEVERITY_BANNER: Record<string, { bg: string; border: string; text: string; label: string }> = {
-  CRITICAL: { bg: "bg-red-950/40", border: "border-red-800", text: "text-red-400", label: "CRITICAL — Do not use this skill" },
-  HIGH: { bg: "bg-orange-950/40", border: "border-orange-800", text: "text-orange-400", label: "HIGH — Significant risk detected" },
-  MEDIUM: { bg: "bg-yellow-950/40", border: "border-yellow-800", text: "text-yellow-400", label: "MEDIUM — Review recommended" },
-  LOW: { bg: "bg-blue-950/40", border: "border-blue-800", text: "text-blue-400", label: "LOW — Minor concerns" },
-  NONE: { bg: "bg-green-950/40", border: "border-green-800", text: "text-green-400", label: "CLEAN — No threats detected" },
-};
+const SEVERITY_BANNER: Record<string, { bg: string; border: string; text: string; label: string }> =
+  {
+    CRITICAL: {
+      bg: "bg-red-950/40",
+      border: "border-red-800",
+      text: "text-red-400",
+      label: "CRITICAL — Do not use this skill",
+    },
+    HIGH: {
+      bg: "bg-orange-950/40",
+      border: "border-orange-800",
+      text: "text-orange-400",
+      label: "HIGH — Significant risk detected",
+    },
+    MEDIUM: {
+      bg: "bg-yellow-950/40",
+      border: "border-yellow-800",
+      text: "text-yellow-400",
+      label: "MEDIUM — Review recommended",
+    },
+    LOW: {
+      bg: "bg-blue-950/40",
+      border: "border-blue-800",
+      text: "text-blue-400",
+      label: "LOW — Minor concerns",
+    },
+    NONE: {
+      bg: "bg-green-950/40",
+      border: "border-green-800",
+      text: "text-green-400",
+      label: "CLEAN — No threats detected",
+    },
+  };
 
 const SEVERITY_FILTER_OPTIONS = ["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW"] as const;
 
@@ -212,9 +238,7 @@ export function SkillScannerPage() {
               Clear
             </button>
             {content && (
-              <span className="text-xs text-gray-600">
-                {content.length.toLocaleString()} chars
-              </span>
+              <span className="text-xs text-gray-600">{content.length.toLocaleString()} chars</span>
             )}
           </div>
           <button
@@ -238,10 +262,14 @@ export function SkillScannerPage() {
       {result && (
         <>
           {/* Overall severity banner */}
-          <div className={`rounded-xl border p-4 mb-6 ${SEVERITY_BANNER[result.overallSeverity].bg} ${SEVERITY_BANNER[result.overallSeverity].border}`}>
+          <div
+            className={`rounded-xl border p-4 mb-6 ${SEVERITY_BANNER[result.overallSeverity].bg} ${SEVERITY_BANNER[result.overallSeverity].border}`}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className={`text-lg font-bold ${SEVERITY_BANNER[result.overallSeverity].text}`}>
+                <span
+                  className={`text-lg font-bold ${SEVERITY_BANNER[result.overallSeverity].text}`}
+                >
                   {SEVERITY_BANNER[result.overallSeverity].label}
                 </span>
               </div>
@@ -323,7 +351,6 @@ export function SkillScannerPage() {
                   <FindingCard
                     key={idx}
                     finding={finding}
-                    index={idx}
                     expanded={expandedFinding === idx}
                     onToggle={() => setExpandedFinding((prev) => (prev === idx ? null : idx))}
                   />
@@ -339,12 +366,10 @@ export function SkillScannerPage() {
 
 function FindingCard({
   finding,
-  index,
   expanded,
   onToggle,
 }: {
   finding: SkillScanFinding;
-  index: number;
   expanded: boolean;
   onToggle: () => void;
 }) {
@@ -363,9 +388,7 @@ function FindingCard({
       >
         {/* Expand arrow */}
         <span
-          className={`text-gray-500 text-xs transition-transform ${
-            expanded ? "rotate-90" : ""
-          }`}
+          className={`text-gray-500 text-xs transition-transform ${expanded ? "rotate-90" : ""}`}
         >
           &#9654;
         </span>
@@ -376,20 +399,18 @@ function FindingCard({
         </span>
 
         {/* Severity badge */}
-        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${THREAT_COLORS[finding.severity]}`}>
+        <span
+          className={`text-xs font-medium px-1.5 py-0.5 rounded ${THREAT_COLORS[finding.severity]}`}
+        >
           {finding.severity}
         </span>
 
         {/* Reason */}
-        <span className="text-xs text-gray-300 flex-1 truncate">
-          {finding.reason}
-        </span>
+        <span className="text-xs text-gray-300 flex-1 truncate">{finding.reason}</span>
 
         {/* Line number */}
         {finding.lineNumber != null && (
-          <span className="text-xs text-gray-600 flex-shrink-0">
-            L{finding.lineNumber}
-          </span>
+          <span className="text-xs text-gray-600 flex-shrink-0">L{finding.lineNumber}</span>
         )}
 
         {/* OWASP ref */}

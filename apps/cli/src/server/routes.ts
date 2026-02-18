@@ -4,7 +4,11 @@ import { desc, eq, and, sql } from "drizzle-orm";
 import { readConfig, writeConfig } from "../lib/config.js";
 import { readOpenClawConfig, writeOpenClawConfig } from "../lib/openclaw-config.js";
 import { getOpenClawMonitor } from "../services/openclaw-monitor.js";
-import { deriveAccessState, applyAccessToggle, applyMcpServerToggle } from "../services/access-control.js";
+import {
+  deriveAccessState,
+  applyAccessToggle,
+  applyMcpServerToggle,
+} from "../services/access-control.js";
 import type { OpenClawConfig, ThreatLevel, ExecDecision, SrtSettings } from "@safeclaw/shared";
 import { skillScanRequestSchema } from "@safeclaw/shared";
 import { scanSkillDefinition, cleanSkillDefinition } from "../lib/skill-scanner.js";
@@ -75,10 +79,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
           updatedAt: sql`datetime('now')`,
         })
         .where(
-          and(
-            eq(schema.accessConfig.category, category),
-            eq(schema.accessConfig.key, "enabled"),
-          ),
+          and(eq(schema.accessConfig.category, category), eq(schema.accessConfig.key, "enabled")),
         );
       return deriveAccessState();
     }
@@ -159,7 +160,11 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get("/api/openclaw/threats", async (request) => {
-    const { severity, resolved, limit = 100 } = request.query as {
+    const {
+      severity,
+      resolved,
+      limit = 100,
+    } = request.query as {
       severity?: ThreatLevel;
       resolved?: string;
       limit?: number;
@@ -260,7 +265,9 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.post("/api/skill-scanner/scan", async (request, reply) => {
     const parsed = skillScanRequestSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: "Invalid request. Provide { content: string } (1 to 500K chars)." });
+      return reply
+        .status(400)
+        .send({ error: "Invalid request. Provide { content: string } (1 to 500K chars)." });
     }
     const result = scanSkillDefinition(parsed.data.content);
     return result;
@@ -269,7 +276,9 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.post("/api/skill-scanner/clean", async (request, reply) => {
     const parsed = skillScanRequestSchema.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: "Invalid request. Provide { content: string } (1 to 500K chars)." });
+      return reply
+        .status(400)
+        .send({ error: "Invalid request. Provide { content: string } (1 to 500K chars)." });
     }
     const result = cleanSkillDefinition(parsed.data.content);
     return result;

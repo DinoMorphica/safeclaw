@@ -6,7 +6,7 @@ interface Props {
   parsed: ParsedActivity;
 }
 
-export function ToolCallRenderer({ activity, parsed }: Props) {
+export function ToolCallRenderer({ parsed }: Props) {
   const result = parsed.result as string | undefined;
 
   return (
@@ -26,13 +26,9 @@ export function ToolCallRenderer({ activity, parsed }: Props) {
           <div className="space-y-1 p-2 bg-gray-800 rounded">
             {Object.entries(parsed.args).map(([key, value]) => (
               <div key={key} className="flex gap-2 text-xs">
-                <span className="text-gray-500 font-mono min-w-[100px]">
-                  {key}:
-                </span>
+                <span className="text-gray-500 font-mono min-w-[100px]">{key}:</span>
                 <span className="text-gray-300 break-all">
-                  {typeof value === "object"
-                    ? JSON.stringify(value)
-                    : String(value)}
+                  {typeof value === "object" ? JSON.stringify(value) : String(value)}
                 </span>
               </div>
             ))}
@@ -45,9 +41,7 @@ export function ToolCallRenderer({ activity, parsed }: Props) {
         <div>
           <p className="text-xs text-gray-500 mb-1">Description:</p>
           {typeof parsed.meta === "string" ? (
-            <p className="text-xs text-gray-400 p-2 bg-gray-800 rounded">
-              {parsed.meta}
-            </p>
+            <p className="text-xs text-gray-400 p-2 bg-gray-800 rounded">{parsed.meta}</p>
           ) : (
             <pre className="text-xs p-2 bg-gray-800 rounded overflow-auto text-gray-400">
               {JSON.stringify(parsed.meta, null, 2)}

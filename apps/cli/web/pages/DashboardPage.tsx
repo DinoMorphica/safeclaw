@@ -46,9 +46,7 @@ export function DashboardPage() {
         ...prev,
         execApprovalPending: Math.max(0, prev.execApprovalPending - 1),
         execApprovalBlocked:
-          entry.decision === "deny"
-            ? prev.execApprovalBlocked + 1
-            : prev.execApprovalBlocked,
+          entry.decision === "deny" ? prev.execApprovalBlocked + 1 : prev.execApprovalBlocked,
         execApprovalAllowed:
           entry.decision === "allow-once" || entry.decision === "allow-always"
             ? prev.execApprovalAllowed + 1
@@ -82,21 +80,9 @@ export function DashboardPage() {
           {/* Row 1: Command Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <StatCard label="Total Commands" value={stats.execApprovalTotal} />
-            <StatCard
-              label="Blocked"
-              value={stats.execApprovalBlocked}
-              color="text-danger"
-            />
-            <StatCard
-              label="Allowed"
-              value={stats.execApprovalAllowed}
-              color="text-success"
-            />
-            <StatCard
-              label="Pending"
-              value={stats.execApprovalPending}
-              color="text-warning"
-            />
+            <StatCard label="Blocked" value={stats.execApprovalBlocked} color="text-danger" />
+            <StatCard label="Allowed" value={stats.execApprovalAllowed} color="text-success" />
+            <StatCard label="Pending" value={stats.execApprovalPending} color="text-warning" />
           </div>
 
           {/* Row 2: OpenClaw Stats */}
@@ -122,8 +108,7 @@ export function DashboardPage() {
                 </span>
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                {stats.threatDetectionRate &&
-                stats.threatDetectionRate.totalActivities > 0
+                {stats.threatDetectionRate && stats.threatDetectionRate.totalActivities > 0
                   ? `${Math.round(
                       (stats.threatDetectionRate.activitiesWithThreats /
                         stats.threatDetectionRate.totalActivities) *
@@ -139,61 +124,44 @@ export function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Threat Results (combined) */}
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-              <h3 className="text-sm font-medium text-gray-400 mb-4">
-                Threat Results
-              </h3>
+              <h3 className="text-sm font-medium text-gray-400 mb-4">Threat Results</h3>
               <div className="space-y-3">
-                {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map(
-                  (level) => {
-                    const total =
-                      stats.openclawThreatBreakdown?.[level] ?? 0;
-                    const resolved =
-                      stats.resolvedThreatBreakdown?.[level] ?? 0;
-                    const pct =
-                      total > 0 ? Math.round((resolved / total) * 100) : 0;
-                    if (total === 0) return null;
-                    return (
-                      <div key={level}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span
-                            className={`text-xs font-medium ${THREAT_COLORS[level]}`}
-                          >
-                            {level}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {resolved} resolved out of {total} ({pct}%)
-                          </span>
-                        </div>
-                        <div className="w-full h-1.5 bg-gray-800 rounded-full">
-                          <div
-                            className={`h-1.5 rounded-full ${BAR_COLORS[level]}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
+                {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map((level) => {
+                  const total = stats.openclawThreatBreakdown?.[level] ?? 0;
+                  const resolved = stats.resolvedThreatBreakdown?.[level] ?? 0;
+                  const pct = total > 0 ? Math.round((resolved / total) * 100) : 0;
+                  if (total === 0) return null;
+                  return (
+                    <div key={level}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-xs font-medium ${THREAT_COLORS[level]}`}>
+                          {level}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {resolved} resolved out of {total} ({pct}%)
+                        </span>
                       </div>
-                    );
-                  },
-                )}
+                      <div className="w-full h-1.5 bg-gray-800 rounded-full">
+                        <div
+                          className={`h-1.5 rounded-full ${BAR_COLORS[level]}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
                 {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).every(
-                  (level) =>
-                    (stats.openclawThreatBreakdown?.[level] ?? 0) === 0,
-                ) && (
-                  <p className="text-xs text-gray-500">
-                    No threats detected yet.
-                  </p>
-                )}
+                  (level) => (stats.openclawThreatBreakdown?.[level] ?? 0) === 0,
+                ) && <p className="text-xs text-gray-500">No threats detected yet.</p>}
               </div>
             </div>
 
             {/* Recent Activity */}
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-              <h3 className="text-sm font-medium text-gray-400 mb-4">
-                Recent Activity
-              </h3>
+              <h3 className="text-sm font-medium text-gray-400 mb-4">Recent Activity</h3>
               {recentActivities.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  No activities recorded yet. Activity will appear here as your
-                  AI agent runs.
+                  No activities recorded yet. Activity will appear here as your AI agent runs.
                 </p>
               ) : (
                 <div className="space-y-2 max-h-[280px] overflow-y-auto pr-2">
@@ -207,9 +175,7 @@ export function DashboardPage() {
                       >
                         {activity.threatLevel}
                       </span>
-                      <span className="text-xs text-gray-500">
-                        {activity.activityType}
-                      </span>
+                      <span className="text-xs text-gray-500">{activity.activityType}</span>
                       <span className="text-xs text-gray-300 flex-1 truncate">
                         {activity.detail}
                       </span>

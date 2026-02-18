@@ -110,9 +110,7 @@ function ScoreRing({ score }: { score: number }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className={`text-3xl font-bold ${scoreColor(score)}`}>
-          {score}
-        </span>
+        <span className={`text-3xl font-bold ${scoreColor(score)}`}>{score}</span>
         <span className="text-xs text-gray-500">/ 100</span>
       </div>
     </div>
@@ -172,9 +170,7 @@ function LayerCard({
         <div className="flex items-center gap-4 px-5 py-4">
           {/* Status dot */}
           <div className="relative flex-shrink-0">
-            <div
-              className={`w-3 h-3 rounded-full ${STATUS_COLORS[layer.status]}`}
-            />
+            <div className={`w-3 h-3 rounded-full ${STATUS_COLORS[layer.status]}`} />
           </div>
 
           {/* Icon */}
@@ -188,15 +184,9 @@ function LayerCard({
               <span className="text-sm font-medium text-gray-200">
                 {index + 1}. {meta?.name ?? layer.name}
               </span>
-              <span className="text-xs text-gray-600">
-                {STATUS_LABELS[layer.status]}
-              </span>
+              <span className="text-xs text-gray-600">{STATUS_LABELS[layer.status]}</span>
             </div>
-            {meta && (
-              <p className="text-xs text-gray-500 mt-0.5 truncate">
-                {meta.description}
-              </p>
-            )}
+            {meta && <p className="text-xs text-gray-500 mt-0.5 truncate">{meta.description}</p>}
           </div>
 
           {/* Check count */}
@@ -232,9 +222,7 @@ function LayerCard({
           {/* Guidance & refs */}
           {meta && (
             <div className="mt-3 pt-3 border-t border-gray-800/50">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                {meta.guidance}
-              </p>
+              <p className="text-xs text-gray-500 leading-relaxed">{meta.guidance}</p>
               {meta.owaspRefs.length > 0 && (
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs text-gray-600">OWASP:</span>
@@ -313,9 +301,7 @@ export function SecurityWorkflowPage() {
     return (
       <div>
         <h2 className="text-2xl font-bold mb-6">Security Workflow</h2>
-        <p className="text-red-400">
-          Failed to load security posture{error ? `: ${error}` : ""}
-        </p>
+        <p className="text-red-400">Failed to load security posture{error ? `: ${error}` : ""}</p>
       </div>
     );
   }
@@ -327,8 +313,7 @@ export function SecurityWorkflowPage() {
         <div>
           <h2 className="text-2xl font-bold">Security Workflow</h2>
           <p className="text-sm text-gray-500 mt-1">
-            12-layer security pipeline — checks run against your live
-            configuration
+            12-layer security pipeline — checks run against your live configuration
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -361,34 +346,24 @@ export function SecurityWorkflowPage() {
         {/* Status Cards */}
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 flex flex-col justify-center">
           <p className="text-sm text-gray-400">Configured</p>
-          <p className="text-3xl font-bold mt-1 text-emerald-400">
-            {posture.configuredLayers}
-          </p>
-          <p className="text-xs text-gray-600 mt-1">
-            of {posture.totalLayers} layers
-          </p>
+          <p className="text-3xl font-bold mt-1 text-emerald-400">{posture.configuredLayers}</p>
+          <p className="text-xs text-gray-600 mt-1">of {posture.totalLayers} layers</p>
         </div>
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 flex flex-col justify-center">
           <p className="text-sm text-gray-400">Partial</p>
-          <p className="text-3xl font-bold mt-1 text-yellow-400">
-            {posture.partialLayers}
-          </p>
+          <p className="text-3xl font-bold mt-1 text-yellow-400">{posture.partialLayers}</p>
           <p className="text-xs text-gray-600 mt-1">need attention</p>
         </div>
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 flex flex-col justify-center">
           <p className="text-sm text-gray-400">Not Configured</p>
-          <p className="text-3xl font-bold mt-1 text-red-400">
-            {posture.unconfiguredLayers}
-          </p>
+          <p className="text-3xl font-bold mt-1 text-red-400">{posture.unconfiguredLayers}</p>
           <p className="text-xs text-gray-600 mt-1">require setup</p>
         </div>
       </div>
 
       {/* Pipeline */}
       <div className="space-y-6">
-        <h3 className="text-sm font-medium text-gray-400">
-          Security Pipeline
-        </h3>
+        <h3 className="text-sm font-medium text-gray-400">Security Pipeline</h3>
         <div className="space-y-6">
           {posture.layers.map((layer, idx) => (
             <LayerCard

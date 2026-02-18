@@ -42,6 +42,6 @@ AI Agent  →  SafeClaw (intercept + analyze)  →  Your System
 
 ## License
 
-AGPL-3.0 — see [LICENSE](https://github.com/nicholasgriffintn/safeclaw-monorepo/blob/main/LICENSE) for details.
+MIT — see [LICENSE](./LICENSE) for details.
 
 Learn more at [safeclaw.io](https://safeclaw.io).

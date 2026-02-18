@@ -51,6 +51,7 @@ export interface SessionFileActivity {
 
 // --- Typed emitter ---
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export declare interface SessionWatcher {
   on(event: "activity", listener: (activity: SessionFileActivity) => void): this;
   emit(event: "activity", activity: SessionFileActivity): boolean;
@@ -66,6 +67,7 @@ interface WatchedFile {
   agentName: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class SessionWatcher extends EventEmitter {
   private watchedFiles = new Map<string, WatchedFile>();
   private agentsDirWatcher: fs.FSWatcher | null = null;
@@ -81,7 +83,15 @@ export class SessionWatcher extends EventEmitter {
   // Map toolCallId → pending tool call info for matching with results
   private pendingToolCalls = new Map<
     string,
-    { activityType: ActivityType; toolName: string; targetPath: string | null; detail: string; sessionId: string; runId: string | null; timestamp: string }
+    {
+      activityType: ActivityType;
+      toolName: string;
+      targetPath: string | null;
+      detail: string;
+      sessionId: string;
+      runId: string | null;
+      timestamp: string;
+    }
   >();
 
   // Cache read content by "runId:targetPath" so writes can reference what was read
@@ -282,10 +292,7 @@ export class SessionWatcher extends EventEmitter {
           this.processedToolCalls.add(item.id);
 
           const args = (item.arguments ?? {}) as Record<string, unknown>;
-          const { activityType, detail, targetPath } = this.mapToolToActivity(
-            item.name,
-            args,
-          );
+          const { activityType, detail, targetPath } = this.mapToolToActivity(item.name, args);
 
           // Store pending tool call for content matching
           const timestamp = entry.timestamp || new Date().toISOString();
@@ -320,7 +327,9 @@ export class SessionWatcher extends EventEmitter {
 
     // Tool results contain the actual content (file content, command output)
     if (role === "toolResult" && Array.isArray(content)) {
-      const toolCallId = (entry.message as Record<string, unknown>).toolCallId as string | undefined;
+      const toolCallId = (entry.message as Record<string, unknown>).toolCallId as
+        | string
+        | undefined;
       if (!toolCallId) return;
 
       const pending = this.pendingToolCalls.get(toolCallId);
@@ -337,9 +346,10 @@ export class SessionWatcher extends EventEmitter {
       }
       if (textParts.length > 0) {
         const fullContent = textParts.join("\n");
-        contentPreview = fullContent.length > MAX_CONTENT_PREVIEW
-          ? fullContent.slice(0, MAX_CONTENT_PREVIEW) + "...[truncated]"
-          : fullContent;
+        contentPreview =
+          fullContent.length > MAX_CONTENT_PREVIEW
+            ? fullContent.slice(0, MAX_CONTENT_PREVIEW) + "...[truncated]"
+            : fullContent;
       }
 
       // Emit a content update activity (enriches the tool call with content)
@@ -352,7 +362,8 @@ export class SessionWatcher extends EventEmitter {
         // For file writes: look up cached read content for the same file in this run
         let readContentPreview: string | null = null;
         if (pending.activityType === "file_write" && pending.targetPath && pending.runId) {
-          readContentPreview = this.recentReadContent.get(`${pending.runId}:${pending.targetPath}`) ?? null;
+          readContentPreview =
+            this.recentReadContent.get(`${pending.runId}:${pending.targetPath}`) ?? null;
         }
 
         const activity: SessionFileActivity = {
@@ -389,9 +400,25 @@ export class SessionWatcher extends EventEmitter {
       };
     }
 
-    if (lower === "write" || lower === "edit" || lower === "create" || lower === "patch" || lower === "apply_patch" || lower === "notebook_edit") {
-      const targetPath = (args.path ?? args.file_path ?? args.file ?? args.notebook_path) as string | null;
-      const verb = lower === "edit" ? "Edit" : lower === "apply_patch" ? "Patch" : lower === "notebook_edit" ? "Edit notebook" : "Write";
+    if (
+      lower === "write" ||
+      lower === "edit" ||
+      lower === "create" ||
+      lower === "patch" ||
+      lower === "apply_patch" ||
+      lower === "notebook_edit"
+    ) {
+      const targetPath = (args.path ?? args.file_path ?? args.file ?? args.notebook_path) as
+        | string
+        | null;
+      const verb =
+        lower === "edit"
+          ? "Edit"
+          : lower === "apply_patch"
+            ? "Patch"
+            : lower === "notebook_edit"
+              ? "Edit notebook"
+              : "Write";
       return {
         activityType: "file_write",
         detail: `${verb} ${targetPath ?? "unknown file"}`,
@@ -399,7 +426,13 @@ export class SessionWatcher extends EventEmitter {
       };
     }
 
-    if (lower === "exec" || lower === "bash" || lower === "shell" || lower === "command" || lower === "terminal") {
+    if (
+      lower === "exec" ||
+      lower === "bash" ||
+      lower === "shell" ||
+      lower === "command" ||
+      lower === "terminal"
+    ) {
       const cmd = (args.command ?? args.cmd ?? "") as string;
       return {
         activityType: "shell_command",
@@ -408,7 +441,14 @@ export class SessionWatcher extends EventEmitter {
       };
     }
 
-    if (lower === "browser" || lower === "browse" || lower === "fetch" || lower === "web" || lower === "http" || lower === "url") {
+    if (
+      lower === "browser" ||
+      lower === "browse" ||
+      lower === "fetch" ||
+      lower === "web" ||
+      lower === "http" ||
+      lower === "url"
+    ) {
       const targetPath = (args.url ?? args.uri) as string | null;
       return {
         activityType: "web_browse",
@@ -417,7 +457,13 @@ export class SessionWatcher extends EventEmitter {
       };
     }
 
-    if (lower === "message" || lower === "send" || lower === "whatsapp" || lower === "sms" || lower === "notify") {
+    if (
+      lower === "message" ||
+      lower === "send" ||
+      lower === "whatsapp" ||
+      lower === "sms" ||
+      lower === "notify"
+    ) {
       const to = (args.to ?? args.target ?? args.recipient) as string | null;
       return {
         activityType: "message",

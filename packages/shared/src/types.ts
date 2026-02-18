@@ -41,15 +41,15 @@ export type OpenClawConnectionStatus =
 
 // --- Threat classification types ---
 export type ThreatCategoryId =
-  | "TC-SEC"  // Secret Exposure
-  | "TC-EXF"  // Data Exfiltration
-  | "TC-INJ"  // Prompt Injection Risk
-  | "TC-DES"  // Destructive Operation
-  | "TC-ESC"  // Privilege Escalation
-  | "TC-SUP"  // Supply Chain Risk
-  | "TC-SFA"  // Sensitive File Access
-  | "TC-SYS"  // System Modification
-  | "TC-NET"  // Suspicious Network Activity
+  | "TC-SEC" // Secret Exposure
+  | "TC-EXF" // Data Exfiltration
+  | "TC-INJ" // Prompt Injection Risk
+  | "TC-DES" // Destructive Operation
+  | "TC-ESC" // Privilege Escalation
+  | "TC-SUP" // Supply Chain Risk
+  | "TC-SFA" // Sensitive File Access
+  | "TC-SYS" // System Modification
+  | "TC-NET" // Suspicious Network Activity
   | "TC-MCP"; // MCP/Tool Poisoning
 
 export interface ThreatFinding {
@@ -125,11 +125,7 @@ export interface OpenClawMonitorStatus {
 
 // --- Socket.IO event payloads ---
 export interface ServerToClientEvents {
-  "safeclaw:alert": (payload: {
-    command: string;
-    threatLevel: ThreatLevel;
-    id: number;
-  }) => void;
+  "safeclaw:alert": (payload: { command: string; threatLevel: ThreatLevel; id: number }) => void;
   "safeclaw:commandLogged": (payload: CommandLog) => void;
   "safeclaw:sessionUpdate": (payload: Session) => void;
   "safeclaw:configUpdate": (payload: AccessConfigEntry) => void;
@@ -150,51 +146,33 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-  "safeclaw:decision": (payload: {
-    commandId: number;
-    action: "ALLOW" | "DENY";
-  }) => void;
+  "safeclaw:decision": (payload: { commandId: number; action: "ALLOW" | "DENY" }) => void;
   "safeclaw:getStats": () => void;
   "safeclaw:getRecentCommands": (payload: { limit: number }) => void;
   "safeclaw:getAccessConfig": () => void;
-  "safeclaw:toggleAccess": (payload: {
-    category: string;
-    enabled: boolean;
-  }) => void;
+  "safeclaw:toggleAccess": (payload: { category: string; enabled: boolean }) => void;
   "safeclaw:getSettings": () => void;
   "safeclaw:updateSettings": (payload: Partial<SafeClawConfig>) => void;
   "safeclaw:getOpenclawConfig": () => void;
   "safeclaw:updateOpenclawConfig": (payload: Partial<OpenClawConfig>) => void;
   "safeclaw:getOpenclawSessions": () => void;
-  "safeclaw:getOpenclawActivities": (payload: {
-    sessionId?: string;
-    limit: number;
-  }) => void;
+  "safeclaw:getOpenclawActivities": (payload: { sessionId?: string; limit: number }) => void;
   "safeclaw:getOpenclawMonitorStatus": () => void;
   "safeclaw:reconnectOpenclaw": () => void;
   "safeclaw:getAccessControlState": () => void;
-  "safeclaw:resolveActivity": (payload: {
-    activityId: number;
-    resolved: boolean;
-  }) => void;
+  "safeclaw:resolveActivity": (payload: { activityId: number; resolved: boolean }) => void;
   "safeclaw:getThreats": (payload: {
     severity?: ThreatLevel;
     resolved?: boolean;
     limit: number;
   }) => void;
-  "safeclaw:execDecision": (payload: {
-    approvalId: string;
-    decision: ExecDecision;
-  }) => void;
+  "safeclaw:execDecision": (payload: { approvalId: string; decision: ExecDecision }) => void;
   "safeclaw:getPendingApprovals": () => void;
   "safeclaw:getApprovalHistory": (payload: { limit: number }) => void;
   "safeclaw:getAllowlist": () => void;
   "safeclaw:addAllowlistPattern": (payload: { pattern: string }) => void;
   "safeclaw:removeAllowlistPattern": (payload: { pattern: string }) => void;
-  "safeclaw:toggleMcpServer": (payload: {
-    serverName: string;
-    enabled: boolean;
-  }) => void;
+  "safeclaw:toggleMcpServer": (payload: { serverName: string; enabled: boolean }) => void;
   "safeclaw:getSrtStatus": () => void;
   "safeclaw:toggleSrt": (payload: { enabled: boolean }) => void;
   "safeclaw:updateSrtDomains": (payload: {
@@ -263,11 +241,7 @@ export interface SafeClawConfig {
 }
 
 // --- Access control types ---
-export type AccessCategory =
-  | "filesystem"
-  | "mcp_servers"
-  | "network"
-  | "system_commands";
+export type AccessCategory = "filesystem" | "mcp_servers" | "network" | "system_commands";
 
 export interface AccessToggleState {
   category: AccessCategory;
@@ -391,20 +365,20 @@ export interface OpenClawConfig {
 
 // --- Skill Scanner types ---
 export type SkillScanCategoryId =
-  | "SK-HID"  // Hidden Content
-  | "SK-INJ"  // Prompt Injection
-  | "SK-EXE"  // Shell Execution
-  | "SK-EXF"  // Data Exfiltration
-  | "SK-SEC"  // Embedded Secrets
-  | "SK-SFA"  // Sensitive File Refs
-  | "SK-MEM"  // Memory/Config Poisoning
-  | "SK-SUP"  // Supply Chain Risk
-  | "SK-B64"  // Encoded Payloads
-  | "SK-IMG"  // Image Exfiltration
-  | "SK-SYS"  // System Prompt Extraction
-  | "SK-ARG"  // Argument Injection
-  | "SK-XTL"  // Cross-Tool Chaining
-  | "SK-PRM"  // Excessive Permissions
+  | "SK-HID" // Hidden Content
+  | "SK-INJ" // Prompt Injection
+  | "SK-EXE" // Shell Execution
+  | "SK-EXF" // Data Exfiltration
+  | "SK-SEC" // Embedded Secrets
+  | "SK-SFA" // Sensitive File Refs
+  | "SK-MEM" // Memory/Config Poisoning
+  | "SK-SUP" // Supply Chain Risk
+  | "SK-B64" // Encoded Payloads
+  | "SK-IMG" // Image Exfiltration
+  | "SK-SYS" // System Prompt Extraction
+  | "SK-ARG" // Argument Injection
+  | "SK-XTL" // Cross-Tool Chaining
+  | "SK-PRM" // Excessive Permissions
   | "SK-STR"; // Suspicious Structure
 
 export interface SkillScanFinding {

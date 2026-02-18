@@ -1,0 +1,6 @@
+dist/
+public/
+node_modules/
+pnpm-lock.yaml
+apps/cli/bin/
+coverage/

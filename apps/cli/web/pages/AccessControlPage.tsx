@@ -8,10 +8,7 @@ import type {
   SrtStatus,
 } from "@safeclaw/shared";
 
-const CATEGORY_META: Record<
-  string,
-  { title: string; description: string }
-> = {
+const CATEGORY_META: Record<string, { title: string; description: string }> = {
   filesystem: {
     title: "File System Access",
     description:
@@ -34,20 +31,14 @@ const CATEGORY_META: Record<
   },
 };
 
-const CATEGORY_ORDER = [
-  "mcp_servers",
-  "network",
-  "system_commands",
-];
+const CATEGORY_ORDER = ["mcp_servers", "network", "system_commands"];
 
 export function AccessControlPage() {
   const [state, setState] = useState<AccessControlState | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
   const [togglingServer, setTogglingServer] = useState<string | null>(null);
   const [mcpExpanded, setMcpExpanded] = useState(true);
-  const [openclawConfig, setOpenclawConfig] = useState<OpenClawConfig | null>(
-    null,
-  );
+  const [openclawConfig, setOpenclawConfig] = useState<OpenClawConfig | null>(null);
 
   // Workspace & sandbox settings (local state for the form)
   const [workspacePath, setWorkspacePath] = useState("");
@@ -88,9 +79,7 @@ export function AccessControlPage() {
       if (!data) return;
       setOpenclawConfig(data);
       setWorkspacePath(data.agents?.defaults?.workspace ?? "");
-      setWorkspaceAccess(
-        data.agents?.defaults?.sandbox?.workspaceAccess ?? "rw",
-      );
+      setWorkspaceAccess(data.agents?.defaults?.sandbox?.workspaceAccess ?? "rw");
       setSandboxModeLocal(data.agents?.defaults?.sandbox?.mode ?? "off");
       setBindMounts(data.agents?.defaults?.sandbox?.docker?.binds ?? []);
       setDockerNetwork(data.agents?.defaults?.sandbox?.docker?.network ?? "");
@@ -197,8 +186,7 @@ export function AccessControlPage() {
             <code className="text-gray-300">~/.openclaw/openclaw.json</code>.
           </p>
           <p className="text-gray-500 mt-2 text-sm">
-            Install and configure OpenClaw first, then return here to manage
-            access controls.
+            Install and configure OpenClaw first, then return here to manage access controls.
           </p>
         </div>
       </div>
@@ -244,16 +232,13 @@ export function AccessControlPage() {
                 </div>
               </div>
               <p className="text-sm text-gray-500 mb-2">
-                Anthropic's #1 security recommendation. Runs agents in a Docker
-                container with restricted filesystem and network access.
+                Anthropic's #1 security recommendation. Runs agents in a Docker container with
+                restricted filesystem and network access.
               </p>
               <p className="text-xs text-gray-600 mb-4">
-                Sandbox controls what the agent can access inside its container.
-                Command approval is configured separately in{" "}
-                <a
-                  href="/interception"
-                  className="text-primary hover:underline"
-                >
+                Sandbox controls what the agent can access inside its container. Command approval is
+                configured separately in{" "}
+                <a href="/interception" className="text-primary hover:underline">
                   Command Interception
                 </a>
                 .
@@ -271,18 +256,14 @@ export function AccessControlPage() {
                     <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-800/30 px-4 py-3">
                       <div className="flex-1 mr-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-200">
-                            {fsMeta.title}
-                          </span>
+                          <span className="text-sm font-medium text-gray-200">{fsMeta.title}</span>
                           {!fsEnabled && (
                             <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-red-900/50 text-red-400 border border-red-700/50">
                               RESTRICTED
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {fsMeta.description}
-                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">{fsMeta.description}</p>
                       </div>
                       <button
                         type="button"
@@ -303,13 +284,10 @@ export function AccessControlPage() {
                 })()}
 
                 <div>
-                  <label className="text-sm text-gray-400 block mb-1">
-                    Workspace Path
-                  </label>
+                  <label className="text-sm text-gray-400 block mb-1">Workspace Path</label>
                   <p className="text-xs text-gray-600 mb-2">
-                    The directory OpenClaw agents work in. This sets the agent's
-                    working directory, but does not restrict access to other
-                    paths unless sandbox mode is enabled.
+                    The directory OpenClaw agents work in. This sets the agent's working directory,
+                    but does not restrict access to other paths unless sandbox mode is enabled.
                   </p>
                   <input
                     type="text"
@@ -321,9 +299,7 @@ export function AccessControlPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-400 block mb-1">
-                    Workspace Access Level
-                  </label>
+                  <label className="text-sm text-gray-400 block mb-1">Workspace Access Level</label>
                   <p className="text-xs text-gray-600 mb-2">
                     Controls how sandboxed agents access the workspace.
                     {!isSandboxed && (
@@ -338,15 +314,9 @@ export function AccessControlPage() {
                     onChange={(e) => setWorkspaceAccess(e.target.value)}
                     className="w-full rounded-lg bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-primary"
                   >
-                    <option value="rw">
-                      Read-Write — full access to workspace
-                    </option>
-                    <option value="ro">
-                      Read-Only — can read but not modify files
-                    </option>
-                    <option value="none">
-                      None — no access to host workspace
-                    </option>
+                    <option value="rw">Read-Write — full access to workspace</option>
+                    <option value="ro">Read-Only — can read but not modify files</option>
+                    <option value="none">None — no access to host workspace</option>
                   </select>
                 </div>
 
@@ -357,27 +327,19 @@ export function AccessControlPage() {
                   </h4>
 
                   <div>
-                    <label className="text-sm text-gray-400 block mb-1">
-                      Sandbox Mode
-                    </label>
+                    <label className="text-sm text-gray-400 block mb-1">Sandbox Mode</label>
                     <p className="text-xs text-gray-600 mb-2">
-                      Runs OpenClaw agents inside a Docker container. Requires
-                      Docker to be installed and running.
+                      Runs OpenClaw agents inside a Docker container. Requires Docker to be
+                      installed and running.
                     </p>
                     <select
                       value={sandboxModeLocal}
                       onChange={(e) => setSandboxModeLocal(e.target.value)}
                       className="w-full rounded-lg bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-primary"
                     >
-                      <option value="off">
-                        Off — no sandboxing, agent runs as your user
-                      </option>
-                      <option value="non-main">
-                        Non-Main — sandbox sub-agents only
-                      </option>
-                      <option value="all">
-                        All — sandbox all agents including main
-                      </option>
+                      <option value="off">Off — no sandboxing, agent runs as your user</option>
+                      <option value="non-main">Non-Main — sandbox sub-agents only</option>
+                      <option value="all">All — sandbox all agents including main</option>
                     </select>
                   </div>
                 </div>
@@ -385,10 +347,10 @@ export function AccessControlPage() {
                 {!isSandboxed && (
                   <div className="rounded-lg bg-yellow-900/30 border border-yellow-700/50 px-4 py-2">
                     <p className="text-xs text-yellow-400">
-                      Sandbox mode is <strong>{sandboxModeLocal}</strong>.
-                      Without Docker sandboxing, the agent runs as your user and
-                      can access any file on your system. The workspace path sets
-                      a default directory but does not enforce boundaries.
+                      Sandbox mode is <strong>{sandboxModeLocal}</strong>. Without Docker
+                      sandboxing, the agent runs as your user and can access any file on your
+                      system. The workspace path sets a default directory but does not enforce
+                      boundaries.
                     </p>
                   </div>
                 )}
@@ -397,10 +359,9 @@ export function AccessControlPage() {
                   <>
                     <div className="rounded-lg bg-green-900/30 border border-green-700/50 px-4 py-2">
                       <p className="text-xs text-green-400">
-                        Sandbox mode is <strong>{sandboxModeLocal}</strong>. The
-                        agent runs in a Docker container and can only access the
-                        workspace directory (at the level set above) plus any
-                        explicitly bound mount paths below.
+                        Sandbox mode is <strong>{sandboxModeLocal}</strong>. The agent runs in a
+                        Docker container and can only access the workspace directory (at the level
+                        set above) plus any explicitly bound mount paths below.
                       </p>
                     </div>
 
@@ -410,9 +371,8 @@ export function AccessControlPage() {
                         Bind Mounts
                       </h4>
                       <p className="text-xs text-gray-600 mb-3">
-                        Host directories to mount into the Docker container.
-                        These are the only paths (besides the workspace) the
-                        agent can access.
+                        Host directories to mount into the Docker container. These are the only
+                        paths (besides the workspace) the agent can access.
                       </p>
 
                       {bindMounts.length > 0 && (
@@ -431,9 +391,7 @@ export function AccessControlPage() {
                                   <span className="text-xs text-gray-300 font-mono truncate block">
                                     {host}
                                   </span>
-                                  <span className="text-xs text-gray-600">
-                                    → {container}
-                                  </span>
+                                  <span className="text-xs text-gray-600">→ {container}</span>
                                 </div>
                                 <span
                                   className={`px-2 py-0.5 text-xs font-medium rounded-full ${
@@ -462,9 +420,7 @@ export function AccessControlPage() {
                       <div className="rounded-lg bg-gray-800/30 border border-gray-700/50 p-3">
                         <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
                           <div>
-                            <label className="text-xs text-gray-500 block mb-1">
-                              Host Path
-                            </label>
+                            <label className="text-xs text-gray-500 block mb-1">Host Path</label>
                             <input
                               type="text"
                               value={newBindHost}
@@ -480,17 +436,13 @@ export function AccessControlPage() {
                             <input
                               type="text"
                               value={newBindContainer}
-                              onChange={(e) =>
-                                setNewBindContainer(e.target.value)
-                              }
+                              onChange={(e) => setNewBindContainer(e.target.value)}
                               placeholder="Same as host path"
                               className="w-full rounded-lg bg-gray-800 border border-gray-700 text-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:border-primary"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-gray-500 block mb-1">
-                              Mode
-                            </label>
+                            <label className="text-xs text-gray-500 block mb-1">Mode</label>
                             <select
                               value={newBindMode}
                               onChange={(e) => setNewBindMode(e.target.value)}
@@ -516,28 +468,19 @@ export function AccessControlPage() {
 
                     {/* Docker Network */}
                     <div>
-                      <label className="text-sm text-gray-400 block mb-1">
-                        Docker Network
-                      </label>
+                      <label className="text-sm text-gray-400 block mb-1">Docker Network</label>
                       <p className="text-xs text-gray-600 mb-2">
-                        Controls network access inside the sandbox. Set to
-                        "none" to completely block outbound network access from
-                        the container.
+                        Controls network access inside the sandbox. Set to "none" to completely
+                        block outbound network access from the container.
                       </p>
                       <select
                         value={dockerNetwork}
                         onChange={(e) => setDockerNetwork(e.target.value)}
                         className="w-full rounded-lg bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-primary"
                       >
-                        <option value="">
-                          Default — standard Docker networking
-                        </option>
-                        <option value="none">
-                          None — no network access (fully isolated)
-                        </option>
-                        <option value="host">
-                          Host — share host network stack
-                        </option>
+                        <option value="">Default — standard Docker networking</option>
+                        <option value="none">None — no network access (fully isolated)</option>
+                        <option value="host">Host — share host network stack</option>
                       </select>
                     </div>
                   </>
@@ -599,9 +542,8 @@ export function AccessControlPage() {
                 </button>
               </div>
               <p className="text-sm text-gray-500 mb-2">
-                Uses Anthropic's Sandbox Runtime (srt) to enforce network domain
-                allowlists without Docker. All network access is denied by default;
-                only allowed domains are reachable.
+                Uses Anthropic's Sandbox Runtime (srt) to enforce network domain allowlists without
+                Docker. All network access is denied by default; only allowed domains are reachable.
               </p>
 
               {!srtStatus.installed && (
@@ -633,7 +575,8 @@ export function AccessControlPage() {
                       Allowed Domains ({srtStatus.settings.network.allowedDomains.length})
                     </h4>
                     <p className="text-xs text-gray-600 mb-2">
-                      Only these domains are reachable when srt is active. Supports wildcards (e.g. *.github.com).
+                      Only these domains are reachable when srt is active. Supports wildcards (e.g.
+                      *.github.com).
                     </p>
                     {srtStatus.settings.network.allowedDomains.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-2">
@@ -645,7 +588,13 @@ export function AccessControlPage() {
                             <span className="font-mono">{domain}</span>
                             <button
                               type="button"
-                              onClick={() => socket.emit("safeclaw:updateSrtDomains", { list: "allow", action: "remove", domain })}
+                              onClick={() =>
+                                socket.emit("safeclaw:updateSrtDomains", {
+                                  list: "allow",
+                                  action: "remove",
+                                  domain,
+                                })
+                              }
                               className="text-green-600 hover:text-red-400 transition-colors cursor-pointer"
                             >
                               ✕
@@ -661,7 +610,11 @@ export function AccessControlPage() {
                         onChange={(e) => setNewAllowDomain(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && newAllowDomain.trim()) {
-                            socket.emit("safeclaw:updateSrtDomains", { list: "allow", action: "add", domain: newAllowDomain.trim() });
+                            socket.emit("safeclaw:updateSrtDomains", {
+                              list: "allow",
+                              action: "add",
+                              domain: newAllowDomain.trim(),
+                            });
                             setNewAllowDomain("");
                           }
                         }}
@@ -672,7 +625,11 @@ export function AccessControlPage() {
                         type="button"
                         onClick={() => {
                           if (newAllowDomain.trim()) {
-                            socket.emit("safeclaw:updateSrtDomains", { list: "allow", action: "add", domain: newAllowDomain.trim() });
+                            socket.emit("safeclaw:updateSrtDomains", {
+                              list: "allow",
+                              action: "add",
+                              domain: newAllowDomain.trim(),
+                            });
                             setNewAllowDomain("");
                           }
                         }}
@@ -702,7 +659,13 @@ export function AccessControlPage() {
                             <span className="font-mono">{domain}</span>
                             <button
                               type="button"
-                              onClick={() => socket.emit("safeclaw:updateSrtDomains", { list: "deny", action: "remove", domain })}
+                              onClick={() =>
+                                socket.emit("safeclaw:updateSrtDomains", {
+                                  list: "deny",
+                                  action: "remove",
+                                  domain,
+                                })
+                              }
                               className="text-red-600 hover:text-red-300 transition-colors cursor-pointer"
                             >
                               ✕
@@ -718,7 +681,11 @@ export function AccessControlPage() {
                         onChange={(e) => setNewDenyDomain(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && newDenyDomain.trim()) {
-                            socket.emit("safeclaw:updateSrtDomains", { list: "deny", action: "add", domain: newDenyDomain.trim() });
+                            socket.emit("safeclaw:updateSrtDomains", {
+                              list: "deny",
+                              action: "add",
+                              domain: newDenyDomain.trim(),
+                            });
                             setNewDenyDomain("");
                           }
                         }}
@@ -729,7 +696,11 @@ export function AccessControlPage() {
                         type="button"
                         onClick={() => {
                           if (newDenyDomain.trim()) {
-                            socket.emit("safeclaw:updateSrtDomains", { list: "deny", action: "add", domain: newDenyDomain.trim() });
+                            socket.emit("safeclaw:updateSrtDomains", {
+                              list: "deny",
+                              action: "add",
+                              domain: newDenyDomain.trim(),
+                            });
                             setNewDenyDomain("");
                           }
                         }}
@@ -748,7 +719,9 @@ export function AccessControlPage() {
                       onClick={() => setSrtFsExpanded(!srtFsExpanded)}
                       className="flex items-center gap-2 text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
                     >
-                      <span className={`inline-block transition-transform ${srtFsExpanded ? "rotate-90" : ""}`}>
+                      <span
+                        className={`inline-block transition-transform ${srtFsExpanded ? "rotate-90" : ""}`}
+                      >
                         &#9654;
                       </span>
                       Filesystem Restrictions
@@ -757,55 +730,77 @@ export function AccessControlPage() {
                     {srtFsExpanded && (
                       <div className="mt-3 space-y-3">
                         <div>
-                          <label className="text-xs text-gray-500 block mb-1">Deny Read Paths</label>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            Deny Read Paths
+                          </label>
                           <p className="text-xs text-gray-600 mb-1">
                             Paths the agent cannot read (e.g. ~/.ssh, ~/.aws).
                           </p>
                           <div className="flex flex-wrap gap-1.5 mb-1">
                             {srtStatus.settings.filesystem.denyRead.map((p) => (
-                              <span key={p} className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
+                              <span
+                                key={p}
+                                className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700"
+                              >
                                 {p}
                               </span>
                             ))}
                             {srtStatus.settings.filesystem.denyRead.length === 0 && (
-                              <span className="text-xs text-gray-600">No deny-read paths configured</span>
+                              <span className="text-xs text-gray-600">
+                                No deny-read paths configured
+                              </span>
                             )}
                           </div>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500 block mb-1">Allow Write Paths</label>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            Allow Write Paths
+                          </label>
                           <p className="text-xs text-gray-600 mb-1">
                             Paths the agent is allowed to write to.
                           </p>
                           <div className="flex flex-wrap gap-1.5 mb-1">
                             {srtStatus.settings.filesystem.allowWrite.map((p) => (
-                              <span key={p} className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
+                              <span
+                                key={p}
+                                className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700"
+                              >
                                 {p}
                               </span>
                             ))}
                             {srtStatus.settings.filesystem.allowWrite.length === 0 && (
-                              <span className="text-xs text-gray-600">No allow-write paths configured</span>
+                              <span className="text-xs text-gray-600">
+                                No allow-write paths configured
+                              </span>
                             )}
                           </div>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500 block mb-1">Deny Write Paths</label>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            Deny Write Paths
+                          </label>
                           <p className="text-xs text-gray-600 mb-1">
                             Paths the agent cannot write to.
                           </p>
                           <div className="flex flex-wrap gap-1.5 mb-1">
                             {srtStatus.settings.filesystem.denyWrite.map((p) => (
-                              <span key={p} className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">
+                              <span
+                                key={p}
+                                className="text-xs font-mono px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700"
+                              >
                                 {p}
                               </span>
                             ))}
                             {srtStatus.settings.filesystem.denyWrite.length === 0 && (
-                              <span className="text-xs text-gray-600">No deny-write paths configured</span>
+                              <span className="text-xs text-gray-600">
+                                No deny-write paths configured
+                              </span>
                             )}
                           </div>
                         </div>
                         <p className="text-xs text-gray-600">
-                          Edit <code className="text-gray-500">{srtStatus.settingsPath}</code> directly for advanced filesystem configuration.
+                          Edit <code className="text-gray-500">{srtStatus.settingsPath}</code>{" "}
+                          directly for advanced filesystem configuration.
                         </p>
                       </div>
                     )}
@@ -815,8 +810,8 @@ export function AccessControlPage() {
 
               {srtStatus.installed && !srtStatus.enabled && (
                 <p className="text-xs text-gray-600 mt-3">
-                  Enable srt above to configure domain filtering rules. Settings
-                  are stored in <code className="text-gray-500">{srtStatus.settingsPath}</code>.
+                  Enable srt above to configure domain filtering rules. Settings are stored in{" "}
+                  <code className="text-gray-500">{srtStatus.settingsPath}</code>.
                 </p>
               )}
             </div>
@@ -837,18 +832,14 @@ export function AccessControlPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1 mr-4">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-medium text-gray-200">
-                        {meta.title}
-                      </h3>
+                      <h3 className="text-sm font-medium text-gray-200">{meta.title}</h3>
                       {!isEnabled && (
                         <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-red-900/50 text-red-400 border border-red-700/50">
                           RESTRICTED
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {meta.description}
-                    </p>
+                    <p className="text-sm text-gray-500 mt-1">{meta.description}</p>
                   </div>
                   <button
                     type="button"
@@ -885,17 +876,14 @@ export function AccessControlPage() {
                     {mcpExpanded && (
                       <div className="space-y-2">
                         {state.mcpServers.map((server) => {
-                          const isServerToggling =
-                            togglingServer === server.name;
+                          const isServerToggling = togglingServer === server.name;
                           const masterDisabled = !isEnabled;
 
                           return (
                             <div
                               key={server.name}
                               className={`flex items-center justify-between py-2 px-3 rounded-lg border border-gray-800 ${
-                                masterDisabled
-                                  ? "opacity-50"
-                                  : "bg-gray-800/30"
+                                masterDisabled ? "opacity-50" : "bg-gray-800/30"
                               }`}
                             >
                               <div className="flex-1 min-w-0 mr-3">
@@ -925,23 +913,16 @@ export function AccessControlPage() {
                               <button
                                 type="button"
                                 onClick={() =>
-                                  handleServerToggle(
-                                    server.name,
-                                    server.effectivelyEnabled,
-                                  )
+                                  handleServerToggle(server.name, server.effectivelyEnabled)
                                 }
                                 disabled={isServerToggling || masterDisabled}
                                 className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors cursor-pointer disabled:opacity-50 ${
-                                  server.effectivelyEnabled
-                                    ? "bg-success"
-                                    : "bg-gray-700"
+                                  server.effectivelyEnabled ? "bg-success" : "bg-gray-700"
                                 }`}
                               >
                                 <div
                                   className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                                    server.effectivelyEnabled
-                                      ? "translate-x-5"
-                                      : "translate-x-0"
+                                    server.effectivelyEnabled ? "translate-x-5" : "translate-x-0"
                                   }`}
                                 />
                               </button>
@@ -955,12 +936,9 @@ export function AccessControlPage() {
 
                 {category === "mcp_servers" && state.mcpServers.length === 0 && (
                   <div className="mt-5 pt-5 border-t border-gray-800">
-                    <p className="text-sm text-gray-500">
-                      No MCP servers configured in OpenClaw.
-                    </p>
+                    <p className="text-sm text-gray-500">No MCP servers configured in OpenClaw.</p>
                   </div>
                 )}
-
               </div>
             </div>
           );

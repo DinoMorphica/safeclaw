@@ -55,6 +55,7 @@ Add a new field `readContentPreview` to Write activities that captures the file 
 **File:** `apps/cli/src/services/session-watcher.ts`
 
 Changes:
+
 - Add `readContentPreview: string | null` to `SessionFileActivity` interface
 - Add `private recentReadContent = new Map<string, string>()` to track read content by `runId:targetPath`
 - In `processEntry()` when `role === "user"`: clear entries for the previous runId from `recentReadContent`
@@ -81,15 +82,15 @@ Changes:
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `packages/shared/src/types.ts` | Add `readContentPreview` to `AgentActivity` |
-| `packages/shared/src/schemas.ts` | Add field to Zod schema |
-| `apps/cli/src/db/schema.ts` | Add column |
-| `apps/cli/src/db/migrate.ts` | Add ALTER TABLE |
-| `apps/cli/src/services/session-watcher.ts` | Core logic: track reads, attach to writes |
-| `apps/cli/src/services/openclaw-monitor.ts` | Pass new field through pipeline |
-| `apps/web/src/components/ActivityDetails/renderers/FileOperationRenderer.tsx` | Display read content on write activities |
+| File                                                                          | Change                                      |
+| ----------------------------------------------------------------------------- | ------------------------------------------- |
+| `packages/shared/src/types.ts`                                                | Add `readContentPreview` to `AgentActivity` |
+| `packages/shared/src/schemas.ts`                                              | Add field to Zod schema                     |
+| `apps/cli/src/db/schema.ts`                                                   | Add column                                  |
+| `apps/cli/src/db/migrate.ts`                                                  | Add ALTER TABLE                             |
+| `apps/cli/src/services/session-watcher.ts`                                    | Core logic: track reads, attach to writes   |
+| `apps/cli/src/services/openclaw-monitor.ts`                                   | Pass new field through pipeline             |
+| `apps/web/src/components/ActivityDetails/renderers/FileOperationRenderer.tsx` | Display read content on write activities    |
 
 ---
 

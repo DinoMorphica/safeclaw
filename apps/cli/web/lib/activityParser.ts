@@ -30,9 +30,7 @@ function extractSensitiveFields(
     lowerTool.includes("write") ||
     lowerTool.includes("edit")
   ) {
-    sensitive.path = (args.path ?? args.file_path ?? args.file) as
-      | string
-      | undefined;
+    sensitive.path = (args.path ?? args.file_path ?? args.file) as string | undefined;
   }
 
   // Shell/exec operations
@@ -63,9 +61,7 @@ function extractSensitiveFields(
     lowerTool.includes("whatsapp") ||
     lowerTool.includes("sms")
   ) {
-    sensitive.recipient = (args.to ?? args.recipient ?? args.target) as
-      | string
-      | undefined;
+    sensitive.recipient = (args.to ?? args.recipient ?? args.target) as string | undefined;
   }
 
   return sensitive;
@@ -131,7 +127,7 @@ export function parseRawPayload(rawPayload: string): ParsedActivity {
       isError,
       sensitiveFields,
     };
-  } catch (error) {
+  } catch (_error) {
     // If parsing fails, return default
     return defaultParsedActivity();
   }

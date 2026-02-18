@@ -63,9 +63,9 @@ function checkDatabase(): CheckResult {
   }
   try {
     const sqlite = new Database(DB_PATH, { readonly: true });
-    const tables = sqlite
-      .prepare("SELECT name FROM sqlite_master WHERE type='table'")
-      .all() as { name: string }[];
+    const tables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+      name: string;
+    }[];
     sqlite.close();
     const expected = [
       "command_logs",

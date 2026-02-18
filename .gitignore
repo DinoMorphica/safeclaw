@@ -5,9 +5,12 @@ node_modules/
 dist/
 *.tsbuildinfo
 
-# CLI public directory (filled by build)
+# CLI public directory (Vite build output)
 apps/cli/public/*
 !apps/cli/public/.gitkeep
+
+# Package tarballs
+*.tgz
 
 # SafeClaw local data
 .safeclaw/
@@ -16,9 +19,15 @@ apps/cli/public/*
 .env
 .env.*
 
+# Local settings / overrides
+*.local
+*.local.*
+
 # IDE
 .vscode/
 .idea/
+*.sw[po]
+*~
 
 # OS
 .DS_Store
@@ -26,6 +35,13 @@ Thumbs.db
 
 # Logs
 *.log
+pnpm-debug.log*
 
 # Testing
 coverage/
+
+# Linter / formatter caches
+.eslintcache
+
+# Turbo (if adopted)
+.turbo/

@@ -86,32 +86,17 @@ export interface ExecApprovalsGetResult {
 
 // --- Typed EventEmitter ---
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export declare interface OpenClawClient {
   on(event: "activity", listener: (parsed: ParsedActivity) => void): this;
-  on(
-    event: "sessionStart",
-    listener: (sessionId: string, model?: string) => void,
-  ): this;
+  on(event: "sessionStart", listener: (sessionId: string, model?: string) => void): this;
   on(event: "sessionEnd", listener: (sessionId: string) => void): this;
-  on(
-    event: "statusChange",
-    listener: (status: OpenClawConnectionStatus) => void,
-  ): this;
-  on(
-    event: "execApproval",
-    listener: (request: ExecApprovalRequest) => void,
-  ): this;
+  on(event: "statusChange", listener: (status: OpenClawConnectionStatus) => void): this;
+  on(event: "execApproval", listener: (request: ExecApprovalRequest) => void): this;
   emit(event: "activity", parsed: ParsedActivity): boolean;
-  emit(
-    event: "sessionStart",
-    sessionId: string,
-    model?: string,
-  ): boolean;
+  emit(event: "sessionStart", sessionId: string, model?: string): boolean;
   emit(event: "sessionEnd", sessionId: string): boolean;
-  emit(
-    event: "statusChange",
-    status: OpenClawConnectionStatus,
-  ): boolean;
+  emit(event: "statusChange", status: OpenClawConnectionStatus): boolean;
   emit(event: "execApproval", request: ExecApprovalRequest): boolean;
 }
 
@@ -142,7 +127,7 @@ function readDeviceIdentity(): DeviceIdentity | null {
   }
 }
 
-function readDeviceAuthToken(): string | null {
+function _readDeviceAuthToken(): string | null {
   try {
     const raw = fs.readFileSync(OPENCLAW_DEVICE_AUTH_JSON, "utf-8");
     const data = JSON.parse(raw) as {
@@ -196,6 +181,7 @@ function signDevicePayload(privateKeyPem: string, payload: string): string {
 
 // --- Client ---
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class OpenClawClient extends EventEmitter {
   private ws: WebSocket | null = null;
   private status: OpenClawConnectionStatus = "disconnected";
@@ -258,10 +244,7 @@ export class OpenClawClient extends EventEmitter {
       });
 
       this.ws.on("close", (code, reason) => {
-        logger.info(
-          { code, reason: reason.toString() },
-          "OpenClaw gateway connection closed",
-        );
+        logger.info({ code, reason: reason.toString() }, "OpenClaw gateway connection closed");
         this.cleanupPendingRequests();
         this.setStatus("disconnected");
         this.scheduleReconnect();
@@ -385,10 +368,7 @@ export class OpenClawClient extends EventEmitter {
         this.setStatus("connected");
         logger.info("Successfully connected to OpenClaw gateway (hello-ok)");
       } else {
-        logger.error(
-          { error: res.error },
-          "OpenClaw connect handshake rejected",
-        );
+        logger.error({ error: res.error }, "OpenClaw connect handshake rejected");
         this.ws?.close();
       }
     } catch (err) {
@@ -498,13 +478,13 @@ export class OpenClawClient extends EventEmitter {
     }
 
     // Extract message role and content if available
-    const role = message?.role as string | undefined;
+    const _role = message?.role as string | undefined;
     const content = message?.content as unknown[];
     let messageText = "";
     if (Array.isArray(content)) {
       messageText = content
-        .filter((item: any) => item?.type === "text")
-        .map((item: any) => item?.text)
+        .filter((item: unknown) => (item as Record<string, unknown>)?.type === "text")
+        .map((item: unknown) => (item as Record<string, unknown>)?.text)
         .join(" ")
         .slice(0, 100); // Truncate for detail display
     }
@@ -587,7 +567,7 @@ export class OpenClawClient extends EventEmitter {
     timestamp: string,
   ): ParsedActivity | null {
     let activityType: ActivityType = "tool_call";
-    let detail = `Tool: ${toolName} (${phase})`;
+    let detail: string = `Tool: ${toolName} (${phase})`; // eslint-disable-line no-useless-assignment
     let targetPath: string | null = null;
 
     const lowerTool = toolName.toLowerCase();
@@ -669,10 +649,7 @@ export class OpenClawClient extends EventEmitter {
 
   // --- Request/response ---
 
-  private sendRequest(
-    method: string,
-    params: Record<string, unknown>,
-  ): Promise<GatewayResponse> {
+  private sendRequest(method: string, params: Record<string, unknown>): Promise<GatewayResponse> {
     return new Promise((resolve, reject) => {
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
         return reject(new Error("WebSocket not open"));
@@ -716,10 +693,7 @@ export class OpenClawClient extends EventEmitter {
       return;
     }
 
-    const delay = Math.min(
-      this.baseReconnectDelay * Math.pow(1.5, this.reconnectAttempts),
-      30000,
-    );
+    const delay = Math.min(this.baseReconnectDelay * Math.pow(1.5, this.reconnectAttempts), 30000);
     this.reconnectAttempts++;
     logger.info(
       `Reconnecting to OpenClaw in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts})`,
@@ -756,16 +730,10 @@ export class OpenClawClient extends EventEmitter {
         logger.info({ approvalId, decision }, "Exec approval resolved");
         return true;
       }
-      logger.error(
-        { approvalId, decision, error: res.error },
-        "Exec approval resolution rejected",
-      );
+      logger.error({ approvalId, decision, error: res.error }, "Exec approval resolution rejected");
       return false;
     } catch (err) {
-      logger.error(
-        { err, approvalId, decision },
-        "Failed to resolve exec approval",
-      );
+      logger.error({ err, approvalId, decision }, "Failed to resolve exec approval");
       return false;
     }
   }
@@ -781,10 +749,7 @@ export class OpenClawClient extends EventEmitter {
           hash: res.payload.hash as string,
         };
       }
-      logger.error(
-        { error: res.error },
-        "Failed to get exec approvals from gateway",
-      );
+      logger.error({ error: res.error }, "Failed to get exec approvals from gateway");
       return null;
     } catch (err) {
       logger.error({ err }, "Failed to get exec approvals from gateway");
@@ -792,10 +757,7 @@ export class OpenClawClient extends EventEmitter {
     }
   }
 
-  async setExecApprovals(
-    file: ExecApprovalsFile,
-    baseHash: string,
-  ): Promise<boolean> {
+  async setExecApprovals(file: ExecApprovalsFile, baseHash: string): Promise<boolean> {
     try {
       const res = await this.sendRequest("exec.approvals.set", {
         file,
@@ -805,10 +767,7 @@ export class OpenClawClient extends EventEmitter {
         logger.info("Successfully updated exec approvals via gateway");
         return true;
       }
-      logger.error(
-        { error: res.error },
-        "Failed to set exec approvals on gateway",
-      );
+      logger.error({ error: res.error }, "Failed to set exec approvals on gateway");
       return false;
     } catch (err) {
       logger.error({ err }, "Failed to set exec approvals on gateway");

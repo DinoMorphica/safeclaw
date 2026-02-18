@@ -17,12 +17,15 @@ interface ExecApprovalsConfig {
     askFallback?: "deny" | "allow";
     autoAllowSkills?: boolean;
   };
-  agents?: Record<string, {
-    allowlist?: Array<{ pattern: string }>;
-    security?: string;
-    ask?: string;
-    askFallback?: string;
-  }>;
+  agents?: Record<
+    string,
+    {
+      allowlist?: Array<{ pattern: string }>;
+      security?: string;
+      ask?: string;
+      askFallback?: string;
+    }
+  >;
 }
 
 export function readExecApprovalsConfig(): ExecApprovalsConfig | null {
@@ -37,10 +40,7 @@ export function readExecApprovalsConfig(): ExecApprovalsConfig | null {
 }
 
 export function writeExecApprovalsConfig(config: ExecApprovalsConfig): void {
-  fs.writeFileSync(
-    OPENCLAW_EXEC_APPROVALS_PATH,
-    JSON.stringify(config, null, 2),
-  );
+  fs.writeFileSync(OPENCLAW_EXEC_APPROVALS_PATH, JSON.stringify(config, null, 2));
 }
 
 /**
@@ -95,9 +95,7 @@ export function ensureDefaults(): void {
     const execHost = openclawConfig.tools?.exec?.host;
     if (execHost !== "gateway") {
       writeOpenClawConfig({ tools: { exec: { host: "gateway" } } });
-      logger.info(
-        "Set tools.exec.host='gateway' in openclaw.json for exec approval support",
-      );
+      logger.info("Set tools.exec.host='gateway' in openclaw.json for exec approval support");
     }
   }
 }

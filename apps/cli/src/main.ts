@@ -48,9 +48,7 @@ program
     await doctorCommand();
   });
 
-const configCmd = program
-  .command("config")
-  .description("Manage SafeClaw configuration");
+const configCmd = program.command("config").description("Manage SafeClaw configuration");
 
 configCmd
   .command("list")

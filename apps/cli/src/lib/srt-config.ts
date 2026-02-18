@@ -121,9 +121,7 @@ export function addAllowedDomain(domain: string): SrtSettings {
   if (!normalized) return settings;
 
   // Remove from denied if present
-  settings.network.deniedDomains = settings.network.deniedDomains.filter(
-    (d) => d !== normalized,
-  );
+  settings.network.deniedDomains = settings.network.deniedDomains.filter((d) => d !== normalized);
 
   // Add to allowed if not already present
   if (!settings.network.allowedDomains.includes(normalized)) {
@@ -140,9 +138,7 @@ export function addAllowedDomain(domain: string): SrtSettings {
 export function removeAllowedDomain(domain: string): SrtSettings {
   const settings = ensureSrtSettings();
   const normalized = domain.trim().toLowerCase();
-  settings.network.allowedDomains = settings.network.allowedDomains.filter(
-    (d) => d !== normalized,
-  );
+  settings.network.allowedDomains = settings.network.allowedDomains.filter((d) => d !== normalized);
   writeSrtSettings(settings);
   return settings;
 }
@@ -156,9 +152,7 @@ export function addDeniedDomain(domain: string): SrtSettings {
   if (!normalized) return settings;
 
   // Remove from allowed if present
-  settings.network.allowedDomains = settings.network.allowedDomains.filter(
-    (d) => d !== normalized,
-  );
+  settings.network.allowedDomains = settings.network.allowedDomains.filter((d) => d !== normalized);
 
   // Add to denied if not already present
   if (!settings.network.deniedDomains.includes(normalized)) {
@@ -175,9 +169,7 @@ export function addDeniedDomain(domain: string): SrtSettings {
 export function removeDeniedDomain(domain: string): SrtSettings {
   const settings = ensureSrtSettings();
   const normalized = domain.trim().toLowerCase();
-  settings.network.deniedDomains = settings.network.deniedDomains.filter(
-    (d) => d !== normalized,
-  );
+  settings.network.deniedDomains = settings.network.deniedDomains.filter((d) => d !== normalized);
   writeSrtSettings(settings);
   return settings;
 }
