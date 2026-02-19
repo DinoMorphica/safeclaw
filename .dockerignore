@@ -1,0 +1,13 @@
+node_modules
+dist
+public
+coverage
+.git
+.github
+.husky
+.claude
+*.tsbuildinfo
+*.log
+.DS_Store
+.env
+.env.*

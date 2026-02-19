@@ -1,11 +1,43 @@
-name: Publish to npm
+name: Publish
 
 on:
   release:
     types: [published]
 
 jobs:
-  publish:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            apps/cli/dist/
+            apps/cli/public/
+            packages/shared/dist/
+
+  publish-npm:
+    needs: build
     runs-on: ubuntu-latest
 
     permissions:
@@ -27,8 +59,56 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm build
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .
 
       - run: pnpm --filter safeclaw publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-github-packages:
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: "@dinomorphica"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .
+
+      - name: Publish to GitHub Packages
+        run: |
+          cd apps/cli
+          # GitHub Packages requires scoped package names
+          node -e "
+            const pkg = require('./package.json');
+            pkg.name = '@dinomorphica/safeclaw';
+            pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+            require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          pnpm publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
